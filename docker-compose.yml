@@ -1,0 +1,101 @@
+services:
+  # 1. PHP 8.4 FPM Application
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: vcwedding_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vcwedding_net
+
+  # 2. Nginx Web Server (Subdomains & Reverse Proxy)
+  web:
+    image: nginx:alpine
+    container_name: vcwedding_web
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - vcwedding_net
+
+  # 3. MySQL 8.0 Database Server
+  db:
+    image: mysql:8.0
+    container_name: vcwedding_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: vcwedding
+      MYSQL_USER: vcwedding_user
+      MYSQL_PASSWORD: secret_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - vcwedding_net
+
+  # 4. Redis Cache & Queue Store
+  redis:
+    image: redis:7-alpine
+    container_name: vcwedding_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vcwedding_net
+
+  # 5. Laravel Reverb WebSockets Server
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: vcwedding_reverb
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    volumes:
+      - .:/var/www/html
+    env_file:
+      - .env.docker
+    ports:
+      - "8082:8080"
+    depends_on:
+      - app
+    networks:
+      - vcwedding_net
+
+networks:
+  vcwedding_net:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
