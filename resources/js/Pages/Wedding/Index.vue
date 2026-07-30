@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { 
     Heart, Calendar, MapPin, Sparkles, Send, Clock, 
-    ChevronDown, CheckCircle2, UserCheck, Gift
+    ChevronDown, CheckCircle2, UserCheck, Gift, ArrowRight
 } from 'lucide-vue-next';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
@@ -39,6 +39,9 @@ defineProps<{
     memories?: Memory[];
     guest?: any;
 }>();
+
+const page = usePage();
+const authUser = computed(() => (page.props as any).auth?.user);
 
 
 const musicPlayerRef = ref<any>(null);
@@ -201,17 +204,29 @@ onUnmounted(() => {
     <main class="relative z-20 font-sans selection:bg-rose-500 selection:text-white bg-[#FAF8F5] pb-24 text-slate-800">
         
         <!-- Header Navigation Bar -->
-        <nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-md bg-white/80 border-b border-rose-200/50 shadow-sm transition-colors duration-500">
-            <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                <div class="font-serif font-bold text-lg md:text-xl flex items-center gap-2.5 tracking-wider text-rose-950">
-                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-9 w-auto rounded-lg shadow-xs border border-rose-200/60" />
-                    <span class="hidden sm:inline text-xs uppercase font-mono tracking-widest text-rose-700 font-bold">Eloria OS</span>
-                    <span class="text-rose-950 font-serif">Quốc Trung & Hồng Vân</span>
-                </div>
-                <div class="flex items-center gap-4 text-xs font-medium">
-                    <Link href="/wedding/timeline" class="px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-900 border border-rose-300/50 transition-all flex items-center gap-1.5 backdrop-blur-sm font-semibold">
-                        <Clock class="w-3.5 h-3.5 text-rose-600" /> Timeline & Budget
-                    </Link>
+        <nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-md bg-white/90 border-b border-rose-200/50 shadow-sm transition-colors duration-500">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <!-- Brand Logo: Only Logo Image (Larger) + Eloria Text -->
+                <Link href="/" class="flex items-center gap-3 group">
+                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-12 md:h-14 w-auto rounded-xl object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300" />
+                    <span class="font-serif text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Eloria</span>
+                </Link>
+
+                <div class="flex items-center gap-2 md:gap-3">
+                    <template v-if="authUser">
+                        <Link href="/wedding/timeline" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-semibold text-xs md:text-sm transition-all shadow-md flex items-center gap-1.5 hover:scale-105 active:scale-95">
+                            Vào Workspace
+                            <ArrowRight class="w-4 h-4 text-rose-400" />
+                        </Link>
+                    </template>
+                    <template v-else>
+                        <Link href="/login" class="px-3.5 py-2 rounded-xl text-slate-700 hover:text-rose-700 hover:bg-rose-50 font-semibold text-xs md:text-sm transition-all">
+                            Đăng nhập
+                        </Link>
+                        <Link href="/register" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-semibold text-xs md:text-sm transition-all shadow-md shadow-slate-900/10 flex items-center gap-1.5 hover:scale-105 active:scale-95">
+                            Đăng ký
+                        </Link>
+                    </template>
                 </div>
             </div>
         </nav>

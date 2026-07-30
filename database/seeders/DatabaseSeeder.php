@@ -12,8 +12,11 @@ use App\Models\Post;
 use App\Models\Tag;
 use App\Models\WeddingMemory;
 use App\Models\Wish;
+use App\Modules\Budget\Models\BudgetItem;
+use App\Modules\Guest\Models\Table;
 use App\Modules\Invitation\Models\InvitationTemplate;
 use App\Modules\Invitation\Models\WorkspaceInvitation;
+use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceMember;
 use Illuminate\Database\Seeder;
@@ -64,9 +67,16 @@ class DatabaseSeeder extends Seeder
 
         // 0.1 Seed Default Wedding Workspace
         $workspace = Workspace::create([
-            'name' => 'Đám Cưới Quốc Trung & Hồng Vân',
+            'name' => 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân',
             'slug' => 'quoc-trung-hong-van',
-            'wedding_date' => '2026-12-19',
+            'groom_name' => 'Nguyễn Hoàng Quốc Trung',
+            'bride_name' => 'Lê Thị Hồng Vân',
+            'wedding_date' => '2026-10-24',
+            'wedding_location' => 'TP. Hồ Chí Minh',
+            'venue_name' => null,
+            'estimated_guests' => 200,
+            'wedding_hashtag' => '#TrungVanWedding2026',
+            'couple_story' => 'Hành trình 6 năm tình yêu từ mái trường đại học đến ngày chung đôi hạnh phúc.',
             'budget_cap' => 350000000.00,
             'currency' => 'VND',
         ]);
@@ -93,7 +103,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 0.15 Seed Sample Tables
-        $tableVip = \App\Modules\Guest\Models\Table::create([
+        $tableVip = Table::create([
             'workspace_id' => $workspace->id,
             'table_name' => 'Bàn VIP 02 (Đồng Nghiệp)',
             'capacity' => 10,
@@ -101,7 +111,7 @@ class DatabaseSeeder extends Seeder
             'shape' => 'round',
         ]);
 
-        $tableFamily = \App\Modules\Guest\Models\Table::create([
+        $tableFamily = Table::create([
             'workspace_id' => $workspace->id,
             'table_name' => 'Bàn 05 (Họ Hàng Nhà Chú Rể)',
             'capacity' => 10,
@@ -110,7 +120,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 0.2 Seed Sample Tasks
-        \App\Modules\Task\Models\Task::create([
+        Task::create([
             'workspace_id' => $workspace->id,
             'category' => 'venue',
             'title' => 'Đặt cọc Trung tâm Hội nghị Tiệc cưới Asiana Plaza',
@@ -122,7 +132,7 @@ class DatabaseSeeder extends Seeder
             'actual_cost' => 150000000.00,
         ]);
 
-        \App\Modules\Task\Models\Task::create([
+        Task::create([
             'workspace_id' => $workspace->id,
             'category' => 'attire',
             'title' => 'May đo Áo dài Ăn hỏi & Váy cưới Nhập khẩu',
@@ -134,7 +144,7 @@ class DatabaseSeeder extends Seeder
             'actual_cost' => 48000000.00,
         ]);
 
-        \App\Modules\Task\Models\Task::create([
+        Task::create([
             'workspace_id' => $workspace->id,
             'category' => 'media',
             'title' => 'Chốt Hợp đồng Ekip Phim ảnh & Pre-wedding Đà Lạt',
@@ -147,7 +157,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 0.3 Seed Sample Budget Items
-        \App\Modules\Budget\Models\BudgetItem::create([
+        BudgetItem::create([
             'workspace_id' => $workspace->id,
             'category_name' => 'Địa điểm & Tiệc cưới',
             'item_name' => 'Tiệc cưới Asiana Plaza (30 Bàn VIP)',
@@ -159,7 +169,7 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Hạn thanh toán đợt 2 trước ngày 05 tháng sau.',
         ]);
 
-        \App\Modules\Budget\Models\BudgetItem::create([
+        BudgetItem::create([
             'workspace_id' => $workspace->id,
             'category_name' => 'Phim ảnh & Quay chụp',
             'item_name' => 'Gói Chụp Pre-wedding & Phóng sự cưới',
@@ -171,7 +181,7 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Cọc đợt 1 đã giữ lịch.',
         ]);
 
-        \App\Modules\Budget\Models\BudgetItem::create([
+        BudgetItem::create([
             'workspace_id' => $workspace->id,
             'category_name' => 'Trang phục & Trang điểm',
             'item_name' => 'Áo dài Cưới & Váy Cưới Công chúa',

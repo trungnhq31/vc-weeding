@@ -18,6 +18,10 @@ import {
     Image as ImageIcon
 } from 'lucide-vue-next';
 import { ref } from 'vue';
+import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
+
+const isAiDrawerOpen = ref(false);
+
 
 interface Task {
     id: string;
@@ -56,9 +60,18 @@ interface Stats {
     totalBudgetSpent: number;
 }
 
+interface WorkspaceInfo {
+    name?: string;
+    wedding_date?: string;
+    budget_cap?: number;
+    estimated_guests?: number;
+    venue_name?: string;
+}
+
 const props = defineProps<{
     milestones: Milestone[];
     stats: Stats;
+    workspace?: WorkspaceInfo;
 }>();
 
 const selectedMilestone = ref<Milestone | null>(null);
@@ -69,8 +82,9 @@ const uploadingTaskId = ref<string | null>(null);
 // Active modal preview for images
 const previewImageUrl = ref<string | null>(null);
 
-const openDetail = (milestone: Milestone) => {
+const openMilestoneModal = (milestone: Milestone) => {
     selectedMilestone.value = milestone;
+    expandedTaskId.value = null;
 };
 
 const closeDetail = () => {
@@ -97,11 +111,11 @@ const toggleTask = async (task: Task) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-            },
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+            }
         });
         const data = await response.json();
-        if (selectedMilestone.value) {
+        if (data.success && selectedMilestone.value) {
             selectedMilestone.value.progress_percentage = data.milestoneProgress;
         }
     } catch (e) {
@@ -116,13 +130,13 @@ const saveTaskDetails = async (task: Task) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
             },
             body: JSON.stringify({
                 notes: task.notes,
                 vendor_info: task.vendor_info,
-                actual_cost: task.actual_cost,
-            }),
+                actual_cost: task.actual_cost
+            })
         });
         const data = await response.json();
         if (data.success && selectedMilestone.value) {
@@ -149,9 +163,9 @@ const handleFileUpload = async (event: Event, task: Task) => {
         const response = await fetch(`/wedding/tasks/${task.id}/upload-image`, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
             },
-            body: formData,
+            body: formData
         });
 
         const data = await response.json();
@@ -166,15 +180,15 @@ const handleFileUpload = async (event: Event, task: Task) => {
     }
 };
 
-const deleteImage = async (task: Task, imageUrl: string) => {
+const deleteTaskImage = async (task: Task, url: string) => {
     try {
         const response = await fetch(`/wedding/tasks/${task.id}/delete-image`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
             },
-            body: JSON.stringify({ url: imageUrl }),
+            body: JSON.stringify({ url })
         });
 
         const data = await response.json();
@@ -185,142 +199,190 @@ const deleteImage = async (task: Task, imageUrl: string) => {
         console.error('Error deleting image:', e);
     }
 };
+
+import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
+
+const showAddTaskModal = ref(false);
+const newTaskTitle = ref('');
+const selectedMilestoneForAdd = ref<Milestone | null>(null);
+const newTaskEstimatedCost = ref<number | null>(null);
+const selectedCategoryFilter = ref('all');
+
+const handleAddTask = () => {
+    if (!newTaskTitle.value || !selectedMilestoneForAdd.value) return;
+    const newTask: Task = {
+        id: `task-${Date.now()}`,
+        title: newTaskTitle.value,
+        is_completed: false,
+        estimated_cost: newTaskEstimatedCost.value || 0,
+        actual_cost: 0,
+        notes: 'Công việc mới khởi tạo'
+    };
+    selectedMilestoneForAdd.value.tasks.push(newTask);
+    newTaskTitle.value = '';
+    newTaskEstimatedCost.value = null;
+    showAddTaskModal.value = false;
+};
 </script>
 
 <template>
-    <Head title="Lộ Trình Chuẩn Bị Cưới (Tối Giản & Lưu Trữ Ảnh)" />
-
-    <!-- Minimalist Clean Neutral Layout -->
-    <div class="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20 antialiased">
-        <!-- Minimalist Header -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
-            <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-8 w-auto rounded-lg shadow-xs border border-slate-200" />
-                    <Link href="/wedding" class="text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1">
-                        <ArrowLeft class="w-3.5 h-3.5" /> Thiệp Cưới
-                    </Link>
-                    <span class="text-slate-300">/</span>
-                    <h1 class="text-sm font-semibold text-slate-800">Eloria Wedding OS • Kế Hoạch Cưới</h1>
+    <WorkspaceLayout title="Lộ Trình & Task Cưới" active-nav="timeline">
+        <!-- Bright Pastel & Glassmorphism Countdown Banner -->
+        <div class="max-w-6xl mx-auto px-6 pt-8 pb-8 space-y-10">
+            <div class="p-8 rounded-3xl bg-gradient-to-r from-rose-100/90 via-amber-50/80 to-pink-100/90 text-rose-950 shadow-lg shadow-rose-900/5 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-white/80">
+                <div class="space-y-2">
+                    <span class="px-3.5 py-1 rounded-full bg-rose-200/60 text-rose-900 text-[11px] font-bold uppercase tracking-widest border border-rose-300/50">
+                        ELORIA WEDDING OS • WORKSPACE DISCOVERY
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-rose-950 tracking-tight leading-snug">
+                        {{ workspace?.groom_name && workspace?.bride_name ? `Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : (workspace?.name || 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân') }}
+                    </h2>
+                    <p class="text-xs md:text-sm text-rose-900/90 leading-relaxed font-medium">
+                        Ngày cưới: <strong class="text-rose-950 font-bold">{{ workspace?.wedding_date || '2026-10-24' }}</strong> • 
+                        Địa điểm: <strong class="text-rose-950 font-bold">{{ workspace?.wedding_location || 'TP. Hồ Chí Minh' }}</strong> • 
+                        Sảnh tiệc: <strong class="text-rose-950 font-bold">{{ workspace?.venue_name || 'Chưa chọn (Đang khảo sát)' }}</strong> • 
+                        Quy mô: ~<strong class="text-rose-950 font-bold">{{ workspace?.estimated_guests || 200 }} khách</strong>
+                    </p>
                 </div>
 
-                <div class="flex items-center gap-4 text-xs">
-                    <a href="/admin" class="text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1 font-medium">
-                        <Sliders class="w-3.5 h-3.5 text-slate-400" /> Admin Panel
-                    </a>
+                <div class="flex items-center gap-4 shrink-0">
+                    <button @click="showAddTaskModal = true; selectedMilestoneForAdd = milestones[0] || null" class="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer">
+                        <Plus class="w-4 h-4" /> Thêm Công Việc Mới
+                    </button>
                 </div>
             </div>
-        </header>
 
-        <!-- Minimalist Overview Section -->
-        <div class="max-w-5xl mx-auto px-6 pt-10 pb-8">
-            <div class="mb-8">
-                <span class="text-xs font-semibold text-rose-600 uppercase tracking-widest">Kế hoạch 5 tháng (15/07 - 19/12/2026)</span>
-                <h2 class="text-2xl md:text-3xl font-serif font-bold text-slate-900 mt-1">Lộ Trình Chuẩn Bị Cưới</h2>
-                <p class="text-slate-500 text-xs md:text-sm mt-1">Sảnh tiệc Asiana Plaza • Quy mô 25 bàn tiệc (~250 khách)</p>
-            </div>
-
-            <!-- Minimalist Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Glassmorphism Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Overall Progress -->
-                <div class="p-5 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-slate-500">Tiến độ tổng thể</span>
-                        <span class="text-xl font-bold text-slate-900">{{ stats.overallProgress }}%</span>
+                <div class="p-7 rounded-2xl bg-white/80 backdrop-blur-md border border-rose-100 shadow-md shadow-rose-900/5 hover:shadow-lg transition-all space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tiến độ tổng thể</span>
+                        <span class="text-2xl font-extrabold text-slate-900">{{ stats.overallProgress }}%</span>
                     </div>
-                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-300" :style="{ width: `${stats.overallProgress}%` }"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div class="bg-rose-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${stats.overallProgress}%` }"></div>
                     </div>
-                    <div class="mt-2 text-xs text-slate-400">
+                    <div class="text-xs text-slate-500 leading-normal">
                         Hoàn thành {{ stats.completedTasks }}/{{ stats.totalTasks }} mục công việc
                     </div>
                 </div>
 
                 <!-- Budget Allocated -->
-                <div class="p-5 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-                    <span class="text-xs font-medium text-slate-500 block mb-1">Ngân sách trần</span>
-                    <div class="text-xl font-bold text-slate-900">{{ formatCurrency(stats.totalBudgetAllocated) }}</div>
-                    <div class="mt-1 text-xs text-slate-400">Trọn gói tiệc & gia tiên</div>
+                <div class="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Ngân sách trần</span>
+                    <div class="text-2xl font-extrabold text-slate-900">{{ formatCurrency(stats.totalBudgetAllocated) }}</div>
+                    <div class="text-xs text-slate-500 leading-normal">Trọn gói tiệc & gia tiên</div>
                 </div>
 
                 <!-- Budget Spent -->
-                <div class="p-5 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-                    <span class="text-xs font-medium text-slate-500 block mb-1">Chi phí đã dùng</span>
-                    <div class="text-xl font-bold text-emerald-700">{{ formatCurrency(stats.totalBudgetSpent) }}</div>
-                    <div class="mt-1 text-xs text-slate-400">Đã chốt cọc nhà hàng & pre-wedding</div>
+                <div class="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Chi phí đã dùng</span>
+                    <div class="text-2xl font-extrabold text-emerald-700">{{ formatCurrency(stats.totalBudgetSpent) }}</div>
+                    <div class="text-xs text-slate-500 leading-normal">Đã chốt cọc nhà hàng & pre-wedding</div>
                 </div>
             </div>
         </div>
 
         <!-- Minimalist Timeline Stream -->
-        <main class="max-w-5xl mx-auto px-6 py-4">
-            <div class="relative border-l border-slate-200 ml-3 md:ml-32 space-y-6">
+        <main class="max-w-6xl mx-auto px-6 pb-20">
+            <div class="relative border-l-2 border-rose-200/80 ml-3 md:ml-36 space-y-12">
                 <div 
                     v-for="milestone in milestones" 
                     :key="milestone.id" 
-                    @click="openDetail(milestone)"
-                    class="relative pl-6 md:pl-8 group cursor-pointer"
+                    @click="openMilestoneModal(milestone)"
+                    class="relative pl-6 md:pl-10 group cursor-pointer"
                 >
                     <!-- Timeframe Badge (Left side on desktop) -->
-                    <div class="hidden md:block absolute -left-36 top-3 text-right w-28 text-xs font-medium text-slate-400">
-                        {{ milestone.timeframe }}
+                    <div class="hidden md:flex absolute -left-40 top-4 text-right w-32 justify-end">
+                        <span class="px-3 py-1 rounded-full bg-rose-100/70 text-rose-950 font-bold text-xs border border-rose-200/60 shadow-xs">
+                            {{ milestone.timeframe }}
+                        </span>
                     </div>
 
                     <!-- Timeline Point Dot -->
                     <div 
-                        class="absolute -left-[13px] top-3.5 w-6 h-6 rounded-full border bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-xs"
+                        class="absolute -left-[14px] top-4 w-7 h-7 rounded-full border-2 bg-white flex items-center justify-center transition-all group-hover:scale-125 shadow-sm"
                         :class="{
-                            'border-emerald-500 text-emerald-600 bg-emerald-50': milestone.status === 'completed',
-                            'border-rose-500 text-rose-600 bg-rose-50': milestone.status === 'in_progress',
-                            'border-slate-300 text-slate-400': milestone.status === 'pending'
+                            'border-emerald-500 text-emerald-600 bg-emerald-50 shadow-emerald-200': milestone.status === 'completed',
+                            'border-rose-500 text-rose-600 bg-rose-50 shadow-rose-200': milestone.status === 'in_progress',
+                            'border-slate-300 text-slate-400 bg-white': milestone.status === 'pending'
                         }"
                     >
-                        <Check v-if="milestone.status === 'completed'" class="w-3 h-3 stroke-[3]" />
-                        <span v-else class="w-1.5 h-1.5 rounded-full" :class="milestone.status === 'in_progress' ? 'bg-rose-500' : 'bg-slate-300'"></span>
+                        <Check v-if="milestone.status === 'completed'" class="w-3.5 h-3.5 stroke-[3]" />
+                        <span v-else class="w-2 h-2 rounded-full" :class="milestone.status === 'in_progress' ? 'bg-rose-500' : 'bg-slate-300'"></span>
                     </div>
 
-                    <!-- Minimalist Card -->
-                    <div class="p-5 rounded-xl bg-white border border-slate-200/80 shadow-xs group-hover:border-slate-300 group-hover:shadow-sm transition-all">
-                        <div class="flex items-center justify-between gap-4 mb-1.5">
-                            <div class="flex items-center gap-2">
-                                <span class="md:hidden text-[11px] font-medium text-slate-400">
+                    <!-- Stitch Glassmorphic Card -->
+                    <div class="p-7 rounded-3xl bg-white/90 backdrop-blur-xl border border-rose-100/90 shadow-lg shadow-rose-900/5 group-hover:border-rose-300 group-hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
+                        <div class="flex items-center justify-between gap-4 mb-3">
+                            <div class="flex items-center gap-3">
+                                <span class="md:hidden text-xs font-bold text-rose-900 px-2.5 py-0.5 rounded-full bg-rose-100/70 border border-rose-200">
                                     {{ milestone.timeframe }}
                                 </span>
                                 <span 
-                                    class="text-[11px] font-medium px-2 py-0.5 rounded"
+                                    class="text-xs font-bold px-3 py-1 rounded-full border shadow-2xs"
                                     :class="{
-                                        'bg-emerald-50 text-emerald-700': milestone.status === 'completed',
-                                        'bg-rose-50 text-rose-700': milestone.status === 'in_progress',
-                                        'bg-slate-100 text-slate-500': milestone.status === 'pending'
+                                        'bg-emerald-100/80 text-emerald-900 border-emerald-200': milestone.status === 'completed',
+                                        'bg-rose-100/80 text-rose-900 border-rose-200': milestone.status === 'in_progress',
+                                        'bg-amber-50 text-amber-900 border-amber-200': milestone.status === 'pending'
                                     }"
                                 >
-                                    {{ milestone.status === 'completed' ? 'Hoàn thành' : (milestone.status === 'in_progress' ? 'Đang thực hiện' : 'Chờ chuẩn bị') }}
+                                    {{ milestone.status === 'completed' ? '✨ Hoàn thành' : (milestone.status === 'in_progress' ? '🔥 Đang thực hiện' : '⏳ Chờ chuẩn bị') }}
                                 </span>
                             </div>
-                            <span class="text-xs font-medium text-slate-400 group-hover:text-slate-700 flex items-center gap-0.5 transition-colors">
-                                Chi tiết & Lưu trữ ảnh <ChevronRight class="w-3.5 h-3.5" />
+                            <span class="text-xs font-semibold text-rose-700 group-hover:text-rose-900 flex items-center gap-1 transition-colors">
+                                Chi tiết & Lưu trữ ảnh <ChevronRight class="w-4 h-4" />
                             </span>
                         </div>
 
-                        <h3 class="text-base font-semibold text-slate-900 group-hover:text-rose-700 transition-colors mb-1">
+                        <h3 class="text-lg font-serif font-bold text-slate-900 group-hover:text-rose-700 transition-colors mb-2">
                             {{ milestone.title }}
                         </h3>
 
-                        <p class="text-slate-500 text-xs leading-relaxed mb-3 line-clamp-2">
+                        <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-4">
                             {{ milestone.summary }}
                         </p>
 
-                        <!-- Progress Bar & Budget -->
-                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                            <div class="flex items-center gap-2 flex-1 max-w-[200px]">
-                                <div class="flex-1 bg-slate-100 rounded-full h-1 overflow-hidden">
-                                    <div class="bg-slate-700 h-1 rounded-full" :style="{ width: `${milestone.progress_percentage}%` }"></div>
+                        <!-- Expanded Task Checklist directly inside card -->
+                        <div v-if="milestone.tasks && milestone.tasks.length > 0" class="mt-4 pt-3 border-t border-rose-100/80 space-y-2" @click.stop>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">DANH SÁCH CÔNG VIỆC ({{ milestone.tasks.filter(t => t.is_completed).length }}/{{ milestone.tasks.length }})</span>
+                                <span class="text-[11px] font-bold text-rose-700">Click để hoàn thành</span>
+                            </div>
+                            <div 
+                                v-for="task in milestone.tasks" 
+                                :key="task.id" 
+                                @click="toggleTask(task)" 
+                                class="p-2.5 rounded-xl border transition flex items-center justify-between gap-3 text-xs cursor-pointer shadow-2xs"
+                                :class="task.is_completed ? 'border-emerald-200 bg-emerald-50/50 text-slate-400 line-through' : 'border-rose-100 bg-white hover:bg-rose-50/40 text-slate-800'"
+                            >
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div 
+                                        class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition"
+                                        :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'"
+                                    >
+                                        <Check v-if="task.is_completed" class="w-3 h-3 stroke-[3]" />
+                                    </div>
+                                    <span class="font-medium truncate">{{ task.title }}</span>
                                 </div>
-                                <span class="font-medium text-slate-700 text-[11px]">{{ milestone.progress_percentage }}%</span>
+                                <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
+                                    {{ formatCurrency(task.estimated_cost) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar & Budget -->
+                        <div class="mt-4 pt-4 border-t border-rose-100/80 flex items-center justify-between text-xs text-slate-600">
+                            <div class="flex items-center gap-3 flex-1 max-w-[220px]">
+                                <div class="flex-1 bg-rose-100/60 rounded-full h-2 overflow-hidden border border-rose-200/40">
+                                    <div class="bg-gradient-to-r from-rose-500 to-pink-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${milestone.progress_percentage}%` }"></div>
+                                </div>
+                                <span class="font-bold text-rose-950 text-xs">{{ milestone.progress_percentage }}%</span>
                             </div>
 
-                            <div class="text-[11px]">
-                                Ngân sách: <span class="font-semibold text-slate-800">{{ formatCurrency(Number(milestone.budget_allocated)) }}</span>
+                            <div class="text-xs font-medium bg-rose-50/80 px-3 py-1 rounded-xl border border-rose-100 text-rose-900">
+                                Ngân sách: <span class="font-bold text-rose-950">{{ formatCurrency(Number(milestone.budget_allocated)) }}</span>
                             </div>
                         </div>
                     </div>
@@ -470,7 +532,7 @@ const deleteImage = async (task: Task, imageUrl: string) => {
                                             <div v-for="(imgUrl, idx) in task.attachments" :key="idx" class="relative group aspect-square rounded border border-slate-200 overflow-hidden bg-slate-100">
                                                 <img :src="imgUrl" alt="Attachment" class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity" @click="previewImageUrl = imgUrl" />
                                                 <button 
-                                                    @click="deleteImage(task, imgUrl)"
+                                                    @click="deleteTaskImage(task, imgUrl)"
                                                     class="absolute top-1 right-1 p-1 bg-red-600/80 hover:bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                                     title="Xóa ảnh"
                                                 >
@@ -499,5 +561,40 @@ const deleteImage = async (task: Task, imageUrl: string) => {
                 <img :src="previewImageUrl" alt="Full Preview" class="max-w-full max-h-[80vh] rounded object-contain" />
             </div>
         </div>
-    </div>
+        <!-- Add Custom Task Modal (The Knot Style) -->
+        <div v-if="showAddTaskModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full border border-rose-100 shadow-xl">
+                <h3 class="text-lg font-serif font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <Plus class="w-5 h-5 text-rose-600" /> Thêm Công Việc Mới Vào Lộ Trình
+                </h3>
+
+                <div class="space-y-4 text-xs">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Giai đoạn thực hiện</label>
+                        <select v-model="selectedMilestoneForAdd" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-rose-300">
+                            <option v-for="m in milestones" :key="m.id" :value="m">{{ m.title }}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Tên mục công việc</label>
+                        <input v-model="newTaskTitle" type="text" placeholder="VD: Thử món thực đơn 6 món tiệc cưới" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-rose-300" />
+                    </div>
+
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Dự toán chi phí (VND)</label>
+                        <input v-model.number="newTaskEstimatedCost" type="number" placeholder="5000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-rose-300" />
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button @click="showAddTaskModal = false" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer">Hủy</button>
+                    <button @click="handleAddTask" class="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold shadow-md hover:bg-rose-700 transition cursor-pointer">Lưu Công Việc</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grounded AI Drawer -->
+        <GroundedAiDrawer :is-open="isAiDrawerOpen" @close="isAiDrawerOpen = false" />
+    </WorkspaceLayout>
 </template>

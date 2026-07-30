@@ -4,6 +4,26 @@ Tất cả các thay đổi kiến trúc, tính năng và bản ghi cơ sở d�
 
 ---
 
+## [Sprint 4] - 2026-07-30
+
+### Added
+- **Vendor CRM Engine (`app/Modules/Vendor/`):**
+  - Migration `2026_07_30_000009_create_vendors_table.php` quản lý danh bạ đối tác (`workspace_id`, `name`, `category`, `contact_name`, `phone`, `email`, `contract_amount`, `paid_amount`, `payment_status`, `due_date`, `notes`).
+  - Eloquent Model `Vendor` tích hợp `HasWorkspace` trait đảm bảo cô lập đa người dùng (multi-tenant).
+  - CQRS Single Actions: `CreateVendorAction` khởi tạo nhà cung cấp và `RecordVendorPaymentAction` cập nhật lịch thanh toán dở dang/hoàn tất.
+  - Service `VendorCrmService` tính tổng giá trị hợp đồng, tổng chi thực tế, dư nợ tồn và nhắc hạn thanh toán 7 ngày tới.
+  - Inertia Page `Vendors.vue` thiết kế tối giản Notion/Linear style (`bg-slate-50`, bảng danh bạ sắc nét, modal tạo mới & thanh toán).
+- **Grounded AI Assistant Engine (`app/Modules/GroundedAI/`):**
+  - Service `GroundedDataQueryService` truy vấn dữ liệu thực tế duy nhất từ Workspace (Ngân sách, Dòng tiền, Task quá hạn, Hạn thanh toán Vendors, Sơ đồ bàn tiệc).
+  - Action `QueryGroundedAiAction` xử lý truy vấn AI cam kết **ZERO Hallucination** (chỉ tổng hợp số liệu thực tế mà không tự sinh dữ liệu ảo).
+  - Component Vue `GroundedAiDrawer.vue` tích hợp phím tắt toàn hệ thống `Cmd+K` / `Ctrl+K`.
+- **Controllers & Routing:**
+  - `VendorController` & `GroundedAiController` với các API/Inertia endpoints tương ứng.
+- **Pest Unit & Feature Tests:**
+  - Test suite `tests/Feature/VendorAndGroundedAiTest.php` kiểm tra toàn bộ luồng tạo nhà cung cấp, thanh toán, cô lập multi-tenant và độ chính xác của Grounded AI.
+
+---
+
 ## [Sprint 3] - 2026-07-30
 
 ### Added

@@ -17,7 +17,14 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->string('groom_name')->nullable()->default('Nguyễn Hoàng Quốc Trung');
+            $table->string('bride_name')->nullable()->default('Lê Thị Hồng Vân');
             $table->date('wedding_date')->nullable();
+            $table->string('wedding_location')->nullable()->default('TP. Hồ Chí Minh');
+            $table->string('venue_name')->nullable()->default('Trung tâm Tiệc cưới Center Palace');
+            $table->integer('estimated_guests')->default(200);
+            $table->string('wedding_hashtag')->nullable()->default('#TrungVanWedding2026');
+            $table->text('couple_story')->nullable();
             $table->decimal('budget_cap', 12, 2)->default(350000000);
             $table->string('currency')->default('VND');
             $table->timestamps();
@@ -57,25 +64,25 @@ return new class extends Migration
         });
 
         // Add workspace_id foreign keys to existing tables
-        if (!Schema::hasColumn('guests', 'workspace_id')) {
+        if (! Schema::hasColumn('guests', 'workspace_id')) {
             Schema::table('guests', function (Blueprint $table) {
                 $table->foreignUlid('workspace_id')->nullable()->after('id')->constrained('workspaces')->nullOnDelete();
             });
         }
 
-        if (!Schema::hasColumn('wishes', 'workspace_id')) {
+        if (! Schema::hasColumn('wishes', 'workspace_id')) {
             Schema::table('wishes', function (Blueprint $table) {
                 $table->foreignUlid('workspace_id')->nullable()->after('id')->constrained('workspaces')->nullOnDelete();
             });
         }
 
-        if (!Schema::hasColumn('wedding_milestones', 'workspace_id')) {
+        if (! Schema::hasColumn('wedding_milestones', 'workspace_id')) {
             Schema::table('wedding_milestones', function (Blueprint $table) {
                 $table->foreignUlid('workspace_id')->nullable()->after('id')->constrained('workspaces')->nullOnDelete();
             });
         }
 
-        if (!Schema::hasColumn('wedding_memories', 'workspace_id')) {
+        if (! Schema::hasColumn('wedding_memories', 'workspace_id')) {
             Schema::table('wedding_memories', function (Blueprint $table) {
                 $table->foreignUlid('workspace_id')->nullable()->after('id')->constrained('workspaces')->nullOnDelete();
             });

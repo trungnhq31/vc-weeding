@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        if (!Schema::hasColumn('guests', 'table_id')) {
+        if (! Schema::hasColumn('guests', 'table_id')) {
             Schema::table('guests', function (Blueprint $table) {
                 $table->foreignUlid('table_id')->nullable()->after('table_name')->constrained('tables')->nullOnDelete();
             });

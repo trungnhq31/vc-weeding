@@ -44,7 +44,7 @@ test('it manages seating planner overview and detects over capacity tables', fun
         'confirmed_count' => 2,
     ]);
 
-    $service = new SeatingPlannerService();
+    $service = new SeatingPlannerService;
     $overview = $service->getSeatingOverview($workspace->id);
 
     expect($overview['total_tables_count'])->toBe(1);
@@ -83,7 +83,7 @@ test('it assigns guest to table via SeatingPlannerService', function () {
         'name' => 'Bạn Thân 01',
     ]);
 
-    $service = new SeatingPlannerService();
+    $service = new SeatingPlannerService;
     $updatedGuest = $service->assignGuestToTable($guest->id, $table->id);
 
     expect($updatedGuest->table_id)->toBe($table->id);

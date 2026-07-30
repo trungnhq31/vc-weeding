@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Modules\Workspace\Models\Workspace;
+use App\Modules\Workspace\Models\WorkspaceMember;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class AuthController extends Controller
+{
+    public function showRegister(): Response
+    {
+        return Inertia::render('Auth/Register');
+    }
+
+    public function showLogin(): Response
+    {
+        return Inertia::render('Auth/Login');
+    }
+
+    public function register(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->route('onboarding.index');
+    }
+
+    public function login(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            return redirect()->intended('/wedding/timeline');
+        }
+
+        return back()->withErrors([
+            'email' => 'Thông tin đăng nhập không chính xác. Vui lòng kiểm tra lại!',
+        ])->onlyInput('email');
+    }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('eloria.home');
+    }
+}

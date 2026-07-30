@@ -12,6 +12,7 @@ class UpdateTaskStatusAction
     {
         $task = Task::findOrFail($taskId);
         $task->update(['status' => $status]);
+
         return $task;
     }
 }

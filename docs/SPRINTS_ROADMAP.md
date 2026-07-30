@@ -10,8 +10,8 @@ Tài liệu này tổng hợp toàn bộ Lộ trình Phát triển (Development 
 | :--- | :--- | :--- | :--- |
 | **Sprint 1** | Multi-Tenant Architecture & Invitation Catalog | ✅ **HOÀN THÀNH** | Schema `workspaces`, `workspace_members`, `invitation_templates`, `workspace_invitations`, Global Scope `HasWorkspace`, 4 Mẫu Thiệp Mời. |
 | **Sprint 2** | Core Workflow Engine (Task & Financial Budgeting) | ✅ **HOÀN THÀNH** | Module `Task` (Kanban, Deadline, Priority), Module `Budget` (Cash Flow Calculator, Overrun Alert, Deposit Tracking, Reminders). |
-| **Sprint 3** | Invitation Catalog Engine, Guests & Seating Canvas | 🚀 **ĐANG TRIỂN KHAI** | Live Preview Mẫu Thiệp, Quản lý Khách Mời (Xác nhận tham dự), Sơ đồ Bàn tiệc Kéo thả (Seating Canvas) & Kiểm tra quá tải bàn. |
-| **Sprint 4** | Vendor CRM & Grounded AI Assistant | ⏳ **TIẾP THEO** | Quản lý Nhà cung cấp (Vendors CRM), Lưu trữ Hợp đồng/Chứng từ, AI Grounded Assistant (Cảnh báo vỡ ngân sách, nhắc nợ không ảo giác). |
+| **Sprint 3** | Invitation Catalog Engine, Guests & Seating Canvas | ✅ **HOÀN THÀNH** | Live Preview Mẫu Thiệp, Quản lý Khách Mời (Xác nhận tham dự), Sơ đồ Bàn tiệc Kéo thả (Seating Canvas) & Kiểm tra quá tải bàn. |
+| **Sprint 4** | Vendor CRM & Grounded AI Assistant | ✅ **HOÀN THÀNH** | Quản lý Nhà cung cấp (Vendors CRM), Lưu trữ Hợp đồng/Chứng từ, AI Grounded Assistant (Cảnh báo vỡ ngân sách, nhắc nợ không ảo giác). |
 
 ---
 
@@ -47,7 +47,13 @@ Tài liệu này tổng hợp toàn bộ Lộ trình Phát triển (Development 
   - Gán khách mời vào bàn tiệc, kiểm tra sức chứa bàn tiệc, cảnh báo quá tải (`table_over_capacity`).
 
 ### Sprint 4: Vendor CRM & Grounded AI Assistant Engine
-- **Mục tiêu:** Quản lý nhà cung cấp, lưu trữ hợp đồng chứng từ và trợ lý AI thông minh từ dữ liệu thực.
-- **Key Features:**
-  - Vendor CRM: Quản lý danh bạ studio, nhà hàng, trang điểm, hoa cưới; quản lý lịch thanh toán đợt 1/2/3.
-  - Grounded AI Assistant: Trả lời câu hỏi dòng tiền, công việc quá hạn, nhà cung cấp chưa thanh toán dựa trên dữ liệu thật, cam kết ZERO hallucination.
+- **Mục tiêu:** Quản lý nhà cung cấp, lưu trữ hợp đồng chứng từ và trợ lý AI thông minh từ dữ liệu thực (Zero Hallucination).
+- **Database Migrations:**
+  - `vendors`: Quản lý nhà cung cấp đối tác (`workspace_id`, `name`, `category`, `contact_name`, `phone`, `email`, `contract_amount`, `paid_amount`, `payment_status`, `due_date`, `notes`).
+- **DDD Modules & Services:**
+  - `app/Modules/Vendor`: CQRS `CreateVendorAction`, `RecordVendorPaymentAction`, Service `VendorCrmService`.
+  - `app/Modules/GroundedAI`: Service `GroundedDataQueryService` & Action `QueryGroundedAiAction` (Zero Hallucination).
+- **Inertia Pages & Components:**
+  - `Vendors.vue`: Giao diện Vendor CRM Notion/Linear style (`bg-slate-50`, crisp tables, payment modals).
+  - `GroundedAiDrawer.vue`: Trợ lý AI truy vấn nhanh số liệu thực tế qua phím tắt `Cmd+K`.
+

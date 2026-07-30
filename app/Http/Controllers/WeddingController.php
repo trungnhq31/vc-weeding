@@ -81,4 +81,30 @@ class WeddingController extends Controller
             'memory' => $memory,
         ]);
     }
+
+    public function budget(): Response
+    {
+        return Inertia::render('Wedding/Budget');
+    }
+
+    public function guests(): Response
+    {
+        return Inertia::render('Wedding/Guests');
+    }
+
+    public function invitationEditor(): Response
+    {
+        return Inertia::render('Wedding/InvitationEditor');
+    }
+
+    public function settings(): Response
+    {
+        return Inertia::render('Wedding/Settings');
+    }
+
+    public function documents(): Response
+    {
+        return Inertia::render('Wedding/Documents');
+    }
 }
+

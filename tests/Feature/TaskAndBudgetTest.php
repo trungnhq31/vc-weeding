@@ -19,7 +19,7 @@ test('it creates task successfully within a workspace', function () {
         'budget_cap' => 200000000.00,
     ]);
 
-    $action = new CreateTaskAction();
+    $action = new CreateTaskAction;
     $task = $action->execute([
         'workspace_id' => $workspace->id,
         'category' => 'venue',
@@ -38,12 +38,12 @@ test('it updates task status via UpdateTaskStatusAction', function () {
         'slug' => 'test-workspace-2',
     ]);
 
-    $task = (new CreateTaskAction())->execute([
+    $task = (new CreateTaskAction)->execute([
         'workspace_id' => $workspace->id,
         'title' => 'Nhiệm vụ kiểm thử',
     ]);
 
-    $updated = (new UpdateTaskStatusAction())->execute($task->id, 'done');
+    $updated = (new UpdateTaskStatusAction)->execute($task->id, 'done');
 
     expect($updated->status)->toBe('done');
 });
@@ -55,7 +55,7 @@ test('it calculates cash flow overview and tracks upcoming payments correctly', 
         'budget_cap' => 100000000.00,
     ]);
 
-    $createBudgetAction = new CreateBudgetItemAction();
+    $createBudgetAction = new CreateBudgetItemAction;
     $budgetItem = $createBudgetAction->execute([
         'workspace_id' => $workspace->id,
         'category_name' => 'Tiệc cưới',
@@ -67,7 +67,7 @@ test('it calculates cash flow overview and tracks upcoming payments correctly', 
         'due_payment_date' => now()->addDays(3)->format('Y-m-d'),
     ]);
 
-    $service = new CashFlowCalculatorService();
+    $service = new CashFlowCalculatorService;
     $overview = $service->calculateOverview($workspace->id);
 
     expect($overview['total_actual'])->toEqual(85000000.00);
@@ -76,7 +76,7 @@ test('it calculates cash flow overview and tracks upcoming payments correctly', 
     expect($overview['upcoming_payments_count'])->toBe(1);
 
     // Record additional payment
-    (new RecordPaymentAction())->execute($budgetItem->id, 65000000.00);
+    (new RecordPaymentAction)->execute($budgetItem->id, 65000000.00);
 
     $updatedOverview = $service->calculateOverview($workspace->id);
     expect($updatedOverview['remaining_balance'])->toEqual(0.00);

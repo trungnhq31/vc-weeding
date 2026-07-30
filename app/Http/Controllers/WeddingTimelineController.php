@@ -16,6 +16,11 @@ class WeddingTimelineController extends Controller
 {
     public function index(): Response
     {
+        // Auto-seed default milestone tasks only if table is completely empty
+        if (WeddingMilestone::count() === 0) {
+            (new \Database\Seeders\WeddingMilestoneSeeder())->run();
+        }
+
         $milestones = WeddingMilestone::with(['tasks'])
             ->orderBy('order')
             ->get();
@@ -24,16 +29,31 @@ class WeddingTimelineController extends Controller
         $completedTasks = WeddingTask::where('is_completed', true)->count();
         $overallProgress = $totalTasks > 0 ? (int) round(($completedTasks / $totalTasks) * 100) : 0;
 
+        $workspace = \App\Modules\Workspace\Models\Workspace::latest()->first();
+
+        $budgetCap = $workspace ? (float) $workspace->budget_cap : 250000000.0;
         $totalBudgetAllocated = WeddingMilestone::sum('budget_allocated');
         $totalBudgetSpent = WeddingMilestone::sum('budget_spent');
 
         return Inertia::render('Wedding/Timeline', [
             'milestones' => $milestones,
+            'workspace' => $workspace ? [
+                'name' => $workspace->name,
+                'groom_name' => $workspace->groom_name ?? 'Nguyễn Hoàng Quốc Trung',
+                'bride_name' => $workspace->bride_name ?? 'Lê Thị Hồng Vân',
+                'wedding_date' => $workspace->wedding_date ? (is_string($workspace->wedding_date) ? $workspace->wedding_date : $workspace->wedding_date->format('Y-m-d')) : '2026-10-24',
+                'wedding_location' => $workspace->wedding_location ?? 'TP. Hồ Chí Minh',
+                'venue_name' => $workspace->venue_name,
+                'budget_cap' => $budgetCap,
+                'estimated_guests' => $workspace->estimated_guests ?? 200,
+                'wedding_hashtag' => $workspace->wedding_hashtag ?? '#TrungVanWedding2026',
+                'couple_story' => $workspace->couple_story,
+            ] : null,
             'stats' => [
                 'overallProgress' => $overallProgress,
                 'totalTasks' => $totalTasks,
                 'completedTasks' => $completedTasks,
-                'totalBudgetAllocated' => (float) $totalBudgetAllocated,
+                'totalBudgetAllocated' => $budgetCap > 0 ? $budgetCap : (float) $totalBudgetAllocated,
                 'totalBudgetSpent' => (float) $totalBudgetSpent,
             ],
         ]);

@@ -21,7 +21,14 @@ class Workspace extends Model
     protected $fillable = [
         'name',
         'slug',
+        'groom_name',
+        'bride_name',
         'wedding_date',
+        'wedding_location',
+        'venue_name',
+        'estimated_guests',
+        'wedding_hashtag',
+        'couple_story',
         'budget_cap',
         'currency',
     ];

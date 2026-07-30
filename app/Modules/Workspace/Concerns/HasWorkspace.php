@@ -13,7 +13,7 @@ trait HasWorkspace
     public static function bootHasWorkspace(): void
     {
         static::creating(function ($model) {
-            if (!$model->workspace_id && session()->has('active_workspace_id')) {
+            if (! $model->workspace_id && session()->has('active_workspace_id')) {
                 $model->workspace_id = session()->get('active_workspace_id');
             }
         });

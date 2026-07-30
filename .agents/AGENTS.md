@@ -128,3 +128,13 @@ All commit messages MUST follow Conventional Commits format:
 - **Event-Driven Reminders:** State mutations that require notifications (e.g. overdue tasks, vendor payment due in 3 days) MUST dispatch Laravel Events (`app/Events/*`), handled asynchronously via Redis queue workers.
 - **Linear-Grade UI UX:** Admin & planning workspaces must use clean minimalist layouts (`bg-slate-50`, crisp typography, subtle borders) with fast keyboard shortcuts.
 
+---
+
+## 7. Mandatory Stitch MCP UI-Design-First Workflow Rule (CRITICAL)
+
+Before building ANY new page or adding/modifying ANY existing UI feature in Eloria OS:
+1. **MANDATORY Stitch MCP Generation / Editing**: You MUST call `StitchMCP/generate_screen_from_text` (or `StitchMCP/edit_screens`) FIRST to generate the visual screen design or edit the existing screen in the Stitch project (`13549898254912139679`).
+2. **Visual Inspection & Asset Download**: Download the screenshot of the newly generated or edited Stitch screen, inspect the layout structure, typography, glassmorphism depth, and pastel color tokens.
+3. **100% Exact Code Implementation**: Implement or update the Vue 3 Inertia page (`resources/js/Pages/Wedding/*.vue`) matching 100% of the visual layout, card spacing, glassmorphism elevation, and bright romantic pastel aesthetic established by Stitch.
+4. **STRICT PROHIBITION**: Direct coding or editing of UI pages WITHOUT first creating or updating the corresponding screen on Stitch MCP is **STRICTLY PROHIBITED**.
+
