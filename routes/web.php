@@ -21,6 +21,7 @@ Route::domain(config('app.wedding_subdomain', 'wedding.vcwedding.test'))->group(
     Route::get('/{guest_slug}', [WeddingController::class, 'invitation'])->name('wedding.invitation');
     Route::post('/rsvp', [RsvpController::class, 'store'])->name('wedding.rsvp.store');
     Route::post('/wishes', [WishController::class, 'store'])->name('wedding.wishes.store');
+    Route::post('/memories/upload', [WeddingController::class, 'uploadMemory'])->name('wedding.memories.upload');
 });
 
 // Fallback Subpath Routes for Wedding
@@ -34,9 +35,11 @@ Route::prefix('wedding')->group(function () {
     Route::get('/invitation/{guest_slug}', [WeddingController::class, 'invitation']);
     Route::post('/rsvp', [RsvpController::class, 'store']);
     Route::post('/wishes', [WishController::class, 'store']);
+    Route::post('/memories/upload', [WeddingController::class, 'uploadMemory']);
 });
 
-// Main Domain Portfolio & Blog Routes (e.g. vcwedding.test)
-Route::get('/', [PortfolioController::class, 'index'])->name('portfolio.index');
+// Main Domain Eloria Wedding OS Routes
+Route::get('/', [WeddingController::class, 'index'])->name('eloria.home');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+

@@ -196,11 +196,12 @@ const deleteImage = async (task: Task, imageUrl: string) => {
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
             <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
+                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-8 w-auto rounded-lg shadow-xs border border-slate-200" />
                     <Link href="/wedding" class="text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1">
                         <ArrowLeft class="w-3.5 h-3.5" /> Thiệp Cưới
                     </Link>
                     <span class="text-slate-300">/</span>
-                    <h1 class="text-sm font-semibold text-slate-800">Kế Hoạch & Tiến Độ Cưới</h1>
+                    <h1 class="text-sm font-semibold text-slate-800">Eloria Wedding OS • Kế Hoạch Cưới</h1>
                 </div>
 
                 <div class="flex items-center gap-4 text-xs">

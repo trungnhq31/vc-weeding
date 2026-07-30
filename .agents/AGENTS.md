@@ -1,10 +1,11 @@
-# WORKSPACE AGENT RULES & CONVENTIONS - PERSONAL HUB & WEDDING INVITATION
+# WORKSPACE AGENT RULES & CONVENTIONS - ELORIA WEDDING PLANNER OS
 
-This workspace enforces strict coding conventions, architecture patterns, UI design rules, Docker container workflows, and Git synchronization standards for all AI Agents and Developers working on this repository.
+This workspace enforces strict coding conventions, architecture patterns, UI design rules, Docker container workflows, and Git synchronization standards for all AI Agents and Developers working on **Eloria — The Operating System for Planning a Wedding**.
 
 ---
 
 ## 1. Tech Stack Standards
+- **Product Name:** Eloria Wedding OS (The Operating System for Planning a Wedding)
 - **Backend:** Laravel 13.x (PHP 8.4+)
 - **Frontend Architecture:** Inertia.js v2 + Vue 3 (Composition API `<script setup>` with TypeScript)
 - **Styling:** Tailwind CSS v4 + Shadcn Vue / Radix Vue / Lucide Icons
@@ -20,19 +21,17 @@ This workspace enforces strict coding conventions, architecture patterns, UI des
 
 ### Three-Tier Scope & Theme Architecture
 
-1. **PUBLIC Wedding Invitation Pages (`resources/js/Pages/Wedding/Index.vue`, `Show.vue`)**:
+1. **PUBLIC Eloria Wedding Pages & Invitations (`resources/js/Pages/Wedding/Index.vue`, `Show.vue`)**:
    - **Bright, Elegant & Romantic Pastel Theme ONLY**.
    - **Backgrounds:** Soft Warm Cream (`#FAF8F5`, `bg-rose-50/50`, `bg-amber-50/30`), Soft Rose Blush (`#FDF2F8`, `#FCE7F3`), Warm Ivory (`#FFFDF9`).
    - **Accents:** Soft Rose Gold (`#EC4899`, `#F43F5E`), Champagne Gold (`#D97706`, `#F59E0B`), Soft Sage Green (`#10B981`).
    - **Text Colors:** Deep Warm Rosewood (`#881337`, `text-rose-950`), Rich Slate/Charcoal (`text-slate-800`).
    - **STRICTLY PROHIBITED:** DO NOT use dark slate/black backgrounds (`bg-slate-950`, `bg-black`) on PUBLIC Wedding invitation pages!
 
-2. **PRIVATE Planning & Timeline (`resources/js/Pages/Wedding/Timeline.vue`, `/admin` - FilamentPHP)**:
-   - **MINIMALIST Design Standard (Phong cách Tối giản)**: Clean, elegant, light neutral or subtle dark layout (`bg-slate-50` / `bg-[#0F172A]`), crisp typography, subtle borders, high contrast readability.
+2. **PRIVATE Eloria Planning Workspace (`resources/js/Pages/Wedding/Timeline.vue`, `/admin` - FilamentPHP)**:
+   - **MINIMALIST Design Standard (Linear / Notion Style)**: Clean, elegant, light neutral layout (`bg-slate-50`), crisp typography, subtle borders, high contrast readability, fast keyboard shortcuts (`Cmd+K`).
    - **STRICTLY PROHIBITED:** DO NOT use noisy neon badges, multicolored glowing bars, or complex ornate visual elements on private planning pages! Keep the layout clean, uncluttered, functional, and minimal.
 
-3. **PUBLIC Portfolio & Technical Blog (`resources/js/Pages/Portfolio/*`, `resources/js/Pages/Blog/*`)**:
-   - **Modern Tech Dark Theme** (`bg-slate-950`, `text-slate-100`, Indigo/Slate accents).
 
 ---
 
@@ -103,3 +102,29 @@ All commit messages MUST follow Conventional Commits format:
 2. **Pull & Rebase:** Before making changes or pushing, execute `git status` and `git pull origin <branch> --rebase` to ensure local branch is up to date.
 3. **Conflict Handling:** Analyze both versions carefully during git conflicts. Never blindly drop changes.
 4. **Security & Secrets:** NEVER commit `.env`, secret credentials, API keys, or private certificates. Maintain `.env.example` and `.env.docker`.
+
+---
+
+## 6. Wedding OS SaaS Architecture & Workflow-First Rules
+
+### Core Philosophy & Product Positioning
+- **Workflow-First Operating System:** Wedding OS is an operating system for wedding planning (like Linear, Notion, Figma for weddings). It is NOT an AI-first product.
+- **Workflow over AI:** Data management, keyboard shortcuts (`Cmd+K`), real-time budget calculations, interactive seating planning, and multi-tenant collaboration MUST take absolute precedence over AI features.
+- **Grounded AI (Zero Hallucination):** AI features MUST ONLY query and summarize stored workspace data. Never generate ungrounded opinions, hallucinated numbers, or generic AI chatter.
+
+### Domain-Driven Design (DDD) & CQRS Rules
+- **Domain Isolation (`app/Modules/{Domain}`):** All SaaS core logic must reside in dedicated domain modules:
+  - `app/Modules/Workspace` (Multi-tenancy isolation & RBAC)
+  - `app/Modules/Task` (Task & Workflow Engine)
+  - `app/Modules/Budget` (Financial & Cash Flow Engine)
+  - `app/Modules/Guest` (Guest List, RSVP & Interactive Seating)
+  - `app/Modules/Vendor` (Vendor CRM & Contract Storage)
+  - `app/Modules/Timeline` (Event Timelines & Reminders)
+  - `app/Modules/GroundedAI` (Grounded Data Assistant)
+- **Strict Multi-Tenant Isolation:** EVERY Eloquent query or database interaction in domain actions MUST be scoped by `workspace_id`. Cross-tenant data leakage is strictly prohibited and must be tested in Pest feature tests.
+- **CQRS Pattern:**
+  - **Commands (State Changes):** Encapsulated in Single-Action classes under `app/Modules/{Domain}/Actions/`. Must return typed DTOs or Models.
+  - **Queries (Read-Only Views):** Encapsulated in Query classes under `app/Modules/{Domain}/Queries/` returning optimized arrays/DTOs for Inertia.
+- **Event-Driven Reminders:** State mutations that require notifications (e.g. overdue tasks, vendor payment due in 3 days) MUST dispatch Laravel Events (`app/Events/*`), handled asynchronously via Redis queue workers.
+- **Linear-Grade UI UX:** Admin & planning workspaces must use clean minimalist layouts (`bg-slate-50`, crisp typography, subtle borders) with fast keyboard shortcuts.
+

@@ -18,10 +18,12 @@ class StoreRsvpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'guest_slug' => ['required', 'string', 'exists:guests,guest_slug'],
+            'guest_slug' => ['nullable', 'string'],
+            'guest_name' => ['nullable', 'string', 'max:255'],
             'rsvp_status' => ['required', Rule::enum(RsvpStatus::class)],
             'confirmed_count' => ['required', 'integer', 'min:0', 'max:10'],
             'dietary_preference' => ['nullable', 'string', 'max:255'],
+            'shuttle_bus' => ['nullable', 'string', 'in:yes,no'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

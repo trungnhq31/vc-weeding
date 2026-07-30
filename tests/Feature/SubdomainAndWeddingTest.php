@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 use App\Events\WishSubmittedEvent;
 use App\Models\Guest;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Event;
+
+beforeEach(function () {
+    $this->withoutMiddleware(ValidateCsrfToken::class);
+});
 
 test('portfolio page returns successful response on main domain', function () {
     $response = $this->get('/');
@@ -30,7 +35,7 @@ test('rsvp endpoint updates guest status correctly', function () {
         'name' => 'Trần Thị B',
     ]);
 
-    $response = $this->post('/wedding/rsvp', [
+    $response = $this->from('/wedding')->post('/wedding/rsvp', [
         'guest_slug' => 'rsvp-test-slug',
         'rsvp_status' => 'attending',
         'confirmed_count' => 2,
@@ -38,7 +43,7 @@ test('rsvp endpoint updates guest status correctly', function () {
         'notes' => 'Sẽ tham dự',
     ]);
 
-    $response->assertRedirect();
+    $response->assertRedirect('/wedding');
     $this->assertDatabaseHas('guests', [
         'guest_slug' => 'rsvp-test-slug',
         'rsvp_status' => 'attending',
@@ -49,12 +54,12 @@ test('rsvp endpoint updates guest status correctly', function () {
 test('wish submission broadcasts reverb event', function () {
     Event::fake();
 
-    $response = $this->post('/wedding/wishes', [
+    $response = $this->from('/wedding')->post('/wedding/wishes', [
         'sender_name' => 'Người Bạn Thân',
         'message' => 'Chúc hai bạn mãi mãi hạnh phúc!',
     ]);
 
-    $response->assertRedirect();
+    $response->assertRedirect('/wedding');
     $this->assertDatabaseHas('wishes', [
         'sender_name' => 'Người Bạn Thân',
     ]);

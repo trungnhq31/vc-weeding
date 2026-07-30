@@ -141,8 +141,9 @@ onUnmounted(() => {
                 <div 
                     class="w-12 h-12 md:w-14 md:h-14 relative transition-transform duration-75"
                     :style="{ 
-                        transform: `translateY(${stepY}px) rotate(${stepRotate}deg) scaleX(-1)` 
+                        transform: `translateY(${stepY}px) rotate(${stepRotate}deg) scaleX(1)` 
                     }"
+
                 >
                     <!-- Clipart Approaching -->
                     <img 

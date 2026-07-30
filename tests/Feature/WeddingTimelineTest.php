@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 use App\Models\WeddingMilestone;
 use Database\Seeders\WeddingMilestoneSeeder;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+
+beforeEach(function () {
+    $this->withoutMiddleware(ValidateCsrfToken::class);
+});
 
 it('renders the wedding timeline page with milestones and stats', function () {
     $this->seed(WeddingMilestoneSeeder::class);

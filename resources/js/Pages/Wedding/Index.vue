@@ -6,7 +6,7 @@ import {
     ChevronDown, CheckCircle2, UserCheck, Gift
 } from 'lucide-vue-next';
 import gsap from 'gsap';
-import ScrollTrigger from 'gsap/ScrollTrigger';
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import Lenis from 'lenis';
 
 import WeddingEnvelopeModal from '../../Components/Wedding/WeddingEnvelopeModal.vue';
@@ -25,10 +25,21 @@ interface Wish {
     created_at: string;
 }
 
+interface Memory {
+    id: string;
+    uploader_name: string;
+    category: string;
+    title?: string;
+    description?: string;
+    image_url: string;
+}
+
 defineProps<{
     wishes: Wish[];
+    memories?: Memory[];
     guest?: any;
 }>();
+
 
 const musicPlayerRef = ref<any>(null);
 
@@ -190,14 +201,16 @@ onUnmounted(() => {
     <main class="relative z-20 font-sans selection:bg-rose-500 selection:text-white bg-[#FAF8F5] pb-24 text-slate-800">
         
         <!-- Header Navigation Bar -->
-        <nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-md bg-white/70 border-b border-rose-200/50 shadow-sm transition-colors duration-500">
+        <nav class="fixed top-0 left-0 right-0 z-40 backdrop-blur-md bg-white/80 border-b border-rose-200/50 shadow-sm transition-colors duration-500">
             <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                <div class="font-serif font-bold text-lg md:text-xl flex items-center gap-2 tracking-wider text-rose-950">
-                    <Heart class="w-4 h-4 text-rose-600 fill-rose-500/40" /> Quốc Trung & Hồng Vân
+                <div class="font-serif font-bold text-lg md:text-xl flex items-center gap-2.5 tracking-wider text-rose-950">
+                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-9 w-auto rounded-lg shadow-xs border border-rose-200/60" />
+                    <span class="hidden sm:inline text-xs uppercase font-mono tracking-widest text-rose-700 font-bold">Eloria OS</span>
+                    <span class="text-rose-950 font-serif">Quốc Trung & Hồng Vân</span>
                 </div>
                 <div class="flex items-center gap-4 text-xs font-medium">
                     <Link href="/wedding/timeline" class="px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-900 border border-rose-300/50 transition-all flex items-center gap-1.5 backdrop-blur-sm font-semibold">
-                        <Clock class="w-3.5 h-3.5 text-rose-600" /> Timeline
+                        <Clock class="w-3.5 h-3.5 text-rose-600" /> Timeline & Budget
                     </Link>
                 </div>
             </div>
@@ -207,7 +220,8 @@ onUnmounted(() => {
         <section class="min-h-screen flex flex-col justify-center items-center px-6 relative text-center pt-20 pb-20 bg-gradient-to-b from-rose-50/80 via-amber-50/40 to-[#FAF8F5]">
             <div class="max-w-3xl mx-auto space-y-8">
                 <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/90 border border-rose-200 text-rose-900 text-xs font-bold uppercase tracking-widest shadow-sm backdrop-blur-md">
-                    <Sparkles class="w-4 h-4 text-rose-600 fill-rose-400/40" /> Trân Trọng Kính Mời • 19.12.2026
+                    <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Icon" class="w-4 h-4 rounded-full" />
+                    <Sparkles class="w-4 h-4 text-rose-600 fill-rose-400/40" /> Eloria Wedding OS • 19.12.2026
                 </div>
 
                 <div class="space-y-4">
@@ -246,7 +260,7 @@ onUnmounted(() => {
                 <!-- Call to Action Buttons -->
                 <div class="pt-4 flex flex-wrap justify-center gap-4 text-sm font-bold">
                     <a href="#rsvp-wishes" class="px-8 py-3.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200 transition-all flex items-center gap-2 cursor-pointer">
-                        <Heart class="w-4 h-4 fill-white" /> Xác Nhận Tham Dự (RSVP)
+                        <Heart class="w-4 h-4 fill-white" /> Xác Nhận Tham Dự
                     </a>
                     
                     <WeddingGiftBoxModal />
@@ -261,12 +275,12 @@ onUnmounted(() => {
         <WeddingLoveStory />
 
         <!-- 6. Pre-wedding Photo Gallery -->
-        <WeddingPhotoGallery />
+        <WeddingPhotoGallery :memories="memories" />
 
         <!-- 7. Schedule Program & Interactive Location Map -->
         <WeddingScheduleAndMap />
 
-        <!-- 8. RSVP & Realtime Wishes Wall -->
+        <!-- 8. Confirmation & Wishes Wall -->
         <section id="rsvp-wishes" class="py-24 px-6 relative bg-white/80 border-t border-rose-100">
             <div class="max-w-5xl mx-auto space-y-16">
                 <!-- Section Header -->
@@ -277,12 +291,12 @@ onUnmounted(() => {
                     </h2>
                 </div>
 
-                <!-- Interactive Forms Grid: RSVP & Realtime Wishes -->
+                <!-- Interactive Forms Grid: Attendance & Wishes -->
                 <div class="grid lg:grid-cols-2 gap-10">
-                    <!-- RSVP Form -->
+                    <!-- Attendance Form -->
                     <div class="stagger-card p-8 rounded-3xl bg-white border border-rose-200/80 shadow-xl shadow-rose-100/60">
                         <h3 class="text-2xl font-serif font-bold text-rose-950 mb-6 flex items-center gap-2">
-                            <UserCheck class="w-6 h-6 text-rose-500" /> Xác Nhận Tham Dự (RSVP)
+                            <UserCheck class="w-6 h-6 text-rose-500" /> Xác Nhận Tham Dự
                         </h3>
 
                         <form @submit.prevent="submitRsvp" class="space-y-4">
@@ -335,7 +349,7 @@ onUnmounted(() => {
                                 :disabled="isSubmittingRsvp"
                                 class="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                <CheckCircle2 class="w-5 h-5" /> Gửi Xác Nhận RSVP
+                                <CheckCircle2 class="w-5 h-5" /> Gửi Xác Nhận Tham Dự
                             </button>
 
                             <div v-if="rsvpSuccess" class="p-3 rounded-xl bg-emerald-100 text-emerald-800 text-sm font-semibold text-center">
@@ -344,7 +358,7 @@ onUnmounted(() => {
                         </form>
                     </div>
 
-                    <!-- Realtime Wishes Form -->
+                    <!-- Wishes Form -->
                     <div class="stagger-card p-8 rounded-3xl bg-white border border-rose-200/80 shadow-xl shadow-rose-100/60 flex flex-col justify-between">
                         <div>
                             <h3 class="text-2xl font-serif font-bold text-rose-950 mb-6 flex items-center gap-2">
@@ -377,8 +391,9 @@ onUnmounted(() => {
                                     :disabled="isSubmittingWish"
                                     class="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    <Heart class="w-4 h-4 fill-white" /> Gửi Lời Chúc Realtime
+                                    <Heart class="w-4 h-4 fill-white" /> Gửi Lời Chúc Mừng
                                 </button>
+
                                 <div v-if="wishSuccess" class="p-3 rounded-xl bg-emerald-100 text-emerald-800 text-sm font-semibold text-center">
                                     Cảm ơn bạn! Lời chúc đã được cập nhật.
                                 </div>
