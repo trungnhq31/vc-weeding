@@ -54,6 +54,7 @@ $weddingRoutes = function () {
 
     // Planning Modules
     Route::get('/budget', [WeddingController::class, 'budget'])->name('wedding.budget');
+    Route::post('/budget/select-venue', [WeddingController::class, 'selectVenue'])->name('wedding.budget.select_venue');
     Route::get('/budget/export', [WeddingController::class, 'exportBudget'])->name('wedding.budget.export');
     Route::get('/guests', [WeddingController::class, 'guests'])->name('wedding.guests');
     Route::get('/guests/export', [WeddingController::class, 'exportGuests'])->name('wedding.guests.export');

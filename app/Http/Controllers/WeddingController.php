@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Guest;
 use App\Models\WeddingMemory;
 use App\Models\Wish;
-use App\Models\Workspace;
+use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Budget\Actions\ExportBudgetAction;
 use App\Modules\Guest\Actions\ExportGuestListAction;
 use App\Modules\Invitation\Actions\UpdateInvitationCmsAction;
@@ -94,9 +94,35 @@ class WeddingController extends Controller
         ]);
     }
 
-    public function budget(): Response
+    public function budget(\App\Services\WeddingBudgetAllocationService $allocationService): Response
     {
-        return Inertia::render('Wedding/Budget');
+        $workspace = Workspace::latest()->first();
+        $budgetCap = (float) ($workspace->budget_cap ?? 250000000.00);
+        $guests = (int) ($workspace->estimated_guests ?? 200);
+
+        $breakdown = $allocationService->calculateStandardBreakdown($budgetCap, $guests);
+        $recommendedVenues = $allocationService->getRecommendedVenues($budgetCap, $guests, $workspace->wedding_location ?? 'TP. Hồ Chí Minh');
+
+        return Inertia::render('Wedding/Budget', [
+            'workspace' => $workspace,
+            'budgetBreakdown' => $breakdown,
+            'recommendedVenues' => $recommendedVenues,
+        ]);
+    }
+
+    public function selectVenue(Request $request, \App\Services\WeddingBudgetAllocationService $allocationService): JsonResponse
+    {
+        $validated = $request->validate([
+            'venue_name' => 'required|string|max:255',
+            'deposit_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        $result = $allocationService->selectVenue(
+            $validated['venue_name'],
+            (float) ($validated['deposit_amount'] ?? 35000000.00)
+        );
+
+        return response()->json($result);
     }
 
     public function guests(): Response
