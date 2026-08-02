@@ -223,4 +223,20 @@ class WeddingTimelineController extends Controller
             'workspace' => $workspace,
         ]);
     }
+
+    public function executeTaskAction(Request $request, string $taskId, \App\Services\WeddingTaskExecutionService $executionService): JsonResponse
+    {
+        $task = WeddingTask::findOrFail($taskId);
+        $result = $executionService->executeTaskAction($task, $request->all());
+
+        return response()->json($result);
+    }
+
+    public function autoCompleteMilestoneAi(Request $request, string $milestoneId, \App\Services\WeddingTaskExecutionService $executionService): JsonResponse
+    {
+        $milestone = WeddingMilestone::findOrFail($milestoneId);
+        $result = $executionService->autoCompleteMilestoneWithAi($milestone);
+
+        return response()->json($result);
+    }
 }

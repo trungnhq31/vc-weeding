@@ -20,9 +20,68 @@ import {
 import { ref } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
 import AiPersonalizeModal from '@/Components/Wedding/AiPersonalizeModal.vue';
+import QuickTaskExecuteModal from '@/Components/Wedding/QuickTaskExecuteModal.vue';
+import { Zap, Sparkles } from 'lucide-vue-next';
 
 const isAiDrawerOpen = ref(false);
 const showAiPersonalizeModal = ref(false);
+const showQuickExecuteModal = ref(false);
+const taskForQuickExecute = ref<any>(null);
+
+const openQuickExecuteModal = (task: any) => {
+    taskForQuickExecute.value = task;
+    showQuickExecuteModal.value = true;
+};
+
+const handleExecuteTaskAction = async ({ taskId, input }: { taskId: string; input: Record<string, any> }) => {
+    try {
+        const res = await fetch(`/wedding/tasks/${taskId}/execute-action`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(input),
+        });
+        const data = await res.json();
+        if (data.success) {
+            showQuickExecuteModal.value = false;
+            const updatedTask = data.task;
+            props.milestones.forEach(m => {
+                const foundIdx = m.tasks.findIndex(t => t.id === taskId);
+                if (foundIdx !== -1) {
+                    m.tasks[foundIdx] = updatedTask;
+                    m.progress_percentage = data.milestoneProgress;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error executing task 1-click:', error);
+    }
+};
+
+const handleAutoCompleteMilestoneAi = async (milestone: any) => {
+    try {
+        const res = await fetch(`/wedding/milestones/${milestone.id}/auto-complete-ai`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (data.milestone) {
+                const foundIdx = props.milestones.findIndex(m => m.id === milestone.id);
+                if (foundIdx !== -1) {
+                    props.milestones[foundIdx] = data.milestone;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error completing milestone with AI:', error);
+    }
+};
 
 const handleAiApplied = (data: any) => {
     if (data.milestones) {
@@ -425,6 +484,13 @@ const handleAddTask = () => {
 
                             <div class="flex items-center gap-2">
                                 <button 
+                                    @click.stop="handleAutoCompleteMilestoneAi(milestone)"
+                                    class="text-xs font-bold text-[#881337] bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-xl hidden sm:flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                                >
+                                    <Sparkles class="w-3.5 h-3.5 text-[#881337]" /> AI Tự Động Hoàn Thành
+                                </button>
+
+                                <button 
                                     @click.stop="openMilestoneModal(milestone)"
                                     class="text-xs font-semibold text-rose-700 hover:text-rose-900 hidden sm:flex items-center gap-1 transition-colors pr-2"
                                 >
@@ -484,6 +550,14 @@ const handleAddTask = () => {
                                             <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md whitespace-nowrap">
                                                 {{ formatCurrency(task.estimated_cost) }}
                                             </span>
+                                            <button 
+                                                v-if="!task.is_completed"
+                                                @click.stop="openQuickExecuteModal(task)"
+                                                class="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[10px] shadow-2xs flex items-center gap-1 transition-all cursor-pointer uppercase tracking-wider"
+                                            >
+                                                <Zap class="w-3 h-3 text-amber-200 fill-amber-200" />
+                                                <span>Thực hiện 1-Click</span>
+                                            </button>
                                         </div>
                                     </div>
 
@@ -843,5 +917,15 @@ const handleAddTask = () => {
 
         <!-- Grounded AI Drawer -->
         <GroundedAiDrawer :is-open="isAiDrawerOpen" @close="isAiDrawerOpen = false" />
+
+        <!-- Quick Task Execute Modal (1-Click System Execution) -->
+        <QuickTaskExecuteModal 
+            :show="showQuickExecuteModal"
+            :task="taskForQuickExecute"
+            :workspace-budget-cap="workspace?.budget_cap"
+            :estimated-guests="workspace?.estimated_guests"
+            @close="showQuickExecuteModal = false"
+            @execute="handleExecuteTaskAction"
+        />
     </WorkspaceLayout>
 </template>

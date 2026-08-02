@@ -41,6 +41,8 @@ $weddingRoutes = function () {
     Route::post('/tasks/{task}/details', [WeddingTimelineController::class, 'updateTaskDetails'])->name('wedding.tasks.details');
     Route::post('/tasks/{task}/upload-image', [WeddingTimelineController::class, 'uploadTaskImage'])->name('wedding.tasks.upload_image');
     Route::post('/tasks/{task}/delete-image', [WeddingTimelineController::class, 'deleteTaskImage'])->name('wedding.tasks.delete_image');
+    Route::post('/tasks/{task}/execute-action', [WeddingTimelineController::class, 'executeTaskAction'])->name('wedding.tasks.execute_action');
+    Route::post('/milestones/{milestone}/auto-complete-ai', [WeddingTimelineController::class, 'autoCompleteMilestoneAi'])->name('wedding.milestones.auto_complete_ai');
 
     // Vendor CRM & Grounded AI Assistant
     Route::get('/vendors', [VendorController::class, 'index'])->name('wedding.vendors.index');
