@@ -28,10 +28,11 @@ This workspace enforces strict coding conventions, architecture patterns, UI des
    - **Text Colors:** Deep Warm Rosewood (`#881337`, `text-rose-950`), Rich Slate/Charcoal (`text-slate-800`).
    - **STRICTLY PROHIBITED:** DO NOT use dark slate/black backgrounds (`bg-slate-950`, `bg-black`) on PUBLIC Wedding invitation pages!
 
-2. **PRIVATE Eloria Planning Workspace (`resources/js/Pages/Wedding/Timeline.vue`, `/admin` - FilamentPHP)**:
-   - **MINIMALIST Design Standard (Linear / Notion Style)**: Clean, elegant, light neutral layout (`bg-slate-50`), crisp typography, subtle borders, high contrast readability, fast keyboard shortcuts (`Cmd+K`).
-   - **STRICTLY PROHIBITED:** DO NOT use noisy neon badges, multicolored glowing bars, or complex ornate visual elements on private planning pages! Keep the layout clean, uncluttered, functional, and minimal.
-
+3. **Concise & Natural UI Copy Standards (STRICT)**:
+   - **NO Redundant English Brackets or Tech Jargon**: Strictly avoid adding English translations in parentheses or redundant buzzwords like `(1s Quick Add)`, `(RSVP)`, `(Seating Canvas)`, `Tức thì`.
+   - **Clean & Concise Labels**: Keep titles, buttons, and placeholders clean, elegant, and directly to the point.
+     - **Good:** `Thêm Khách Mời`, `Danh Sách Khách Mời`, `Sơ Đồ Bàn Tiệc`, `Thêm Khách`
+     - **Bad:** `Thêm Nhanh Khách Mời Tức Thì (1s Quick Add)`, `Sơ Đồ Bàn Tiệc Kéo Thả (Seating Canvas)`
 
 ---
 

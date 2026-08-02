@@ -329,7 +329,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
           <div class="text-3xl font-extrabold text-slate-900 mt-1 font-mono">{{ totalGuests }} Người</div>
         </div>
         <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-          <span class="text-xs text-slate-500 font-medium">Đã Xác Nhận (RSVP Yes)</span>
+          <span class="text-xs text-slate-500 font-medium">Đã Xác Nhận</span>
           <div class="text-3xl font-extrabold text-emerald-600 mt-1 font-mono">{{ confirmedCount }} Người</div>
         </div>
         <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
@@ -350,7 +350,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
             class="px-5 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer"
             :class="activeTab === 'list' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
           >
-            Danh Sách Khách Mời (RSVP)
+            Danh Sách Khách Mời
           </button>
           <button 
             @click="activeTab = 'seating'"
@@ -358,7 +358,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
             :class="activeTab === 'seating' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
           >
             <Grid class="w-4 h-4 text-rose-400" />
-            Sơ Đồ Bàn Tiệc Kéo Thả (Seating Canvas)
+            Sơ Đồ Bàn Tiệc
           </button>
         </div>
 
@@ -378,7 +378,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
             class="px-5 py-2.5 rounded-2xl bg-[#881337] hover:bg-[#70102d] text-white font-extrabold text-xs transition flex items-center gap-2 shadow-lg cursor-pointer transform hover:-translate-y-0.5"
           >
             <Share2 class="w-4 h-4 text-amber-300" />
-            <span>🔗 Chia Sẻ Link Thêm Khách</span>
+            <span>Chia Sẻ Link Thêm Khách</span>
           </button>
         </div>
       </div>
@@ -386,14 +386,13 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
       <!-- Tab 1: Guest List & Quick Add Engine -->
       <div v-if="activeTab === 'list'" class="space-y-6">
 
-        <!-- ⚡ INLINE QUICK ADD GUEST BAR (Clean & Compact 1s Instant Add) -->
+        <!-- ⚡ INLINE ADD GUEST BAR -->
         <div class="p-5 md:p-6 rounded-3xl bg-gradient-to-r from-rose-950 via-[#881337] to-rose-900 text-white shadow-xl space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <Zap class="w-5 h-5 text-amber-300 animate-bounce" />
-              <h3 class="font-serif font-extrabold text-white text-base">Thêm Nhanh Khách Mời Tức Thì (1s Quick Add)</h3>
+              <UserPlus class="w-5 h-5 text-amber-300" />
+              <h3 class="font-serif font-extrabold text-white text-base">Thêm Khách Mời</h3>
             </div>
-            <span class="text-[11px] text-amber-200 font-mono hidden md:inline">Nhấn Enter hoặc click Thêm để chèn khách tức thì</span>
           </div>
 
           <form @submit.prevent="handleQuickAdd" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
@@ -403,7 +402,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                 v-model="quickName"
                 type="text"
                 required
-                placeholder="👤 Họ và tên khách mời..."
+                placeholder="Họ và tên khách mời..."
                 class="w-full px-4 py-3 rounded-2xl bg-white/95 text-slate-900 font-bold placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 text-xs shadow-inner"
               />
             </div>
@@ -423,7 +422,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
               <input 
                 v-model="quickPhone"
                 type="tel"
-                placeholder="📞 SĐT..."
+                placeholder="Số điện thoại..."
                 class="w-full px-3 py-3 rounded-2xl bg-white/95 text-slate-900 font-mono text-xs placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 shadow-inner"
               />
             </div>
@@ -436,7 +435,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                 class="w-full h-full py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-1 cursor-pointer transition active:scale-95 disabled:opacity-50"
               >
                 <Plus class="w-4 h-4 text-slate-950 stroke-[3]" />
-                <span>+ THÊM NHANH</span>
+                <span>+ THÊM KHÁCH MỜI</span>
               </button>
             </div>
           </form>
@@ -452,7 +451,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
               <input 
                 v-model="searchQuery"
                 type="text" 
-                placeholder="Tìm tên khách, số điện thoại, nhóm..." 
+                placeholder="Tìm kiếm khách mời..." 
                 class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs w-full focus:outline-hidden focus:border-[#881337] shadow-2xs" 
               />
             </div>
