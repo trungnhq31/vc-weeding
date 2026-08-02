@@ -10,6 +10,22 @@ beforeEach(function () {
     (new WeddingMilestoneSeeder)->run();
 });
 
+test('user can fetch AI smart task recommendation with full workspace couple context', function () {
+    $task = WeddingTask::first();
+    expect($task)->not->toBeNull();
+
+    $response = $this->getJson("/wedding/tasks/{$task->id}/ai-recommendation");
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+        ])
+        ->assertJsonStructure([
+            'workspaceContext' => ['couple_name', 'wedding_date', 'budget_cap', 'estimated_guests'],
+            'aiRecommendation' => ['title', 'description', 'suggestedInput'],
+        ]);
+});
+
 test('user can execute budget task in 1 click and update workspace budget cap', function () {
     $task = WeddingTask::where('title', 'like', '%ngân sách%')->first();
     expect($task)->not->toBeNull();

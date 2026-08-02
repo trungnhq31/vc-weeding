@@ -15,6 +15,72 @@ use Illuminate\Support\Str;
 class WeddingTaskExecutionService
 {
     /**
+     * Get Grounded AI Context & Personalized Task Recommendation for Dâu Rể.
+     */
+    public function getTaskAiRecommendation(WeddingTask $task): array
+    {
+        $workspace = Workspace::latest()->first();
+        if (! $workspace) {
+            $workspace = Workspace::create([
+                'name' => 'Đám Cưới Quốc Trung & Hồng Vân',
+                'slug' => 'quoc-trung-hong-van-'.Str::random(5),
+                'groom_name' => 'Nguyễn Hoàng Quốc Trung',
+                'bride_name' => 'Lê Thị Hồng Vân',
+                'budget_cap' => 250000000.00,
+                'estimated_guests' => 200,
+                'wedding_date' => '2026-10-24',
+                'wedding_location' => 'TP. Hồ Chí Minh',
+            ]);
+        }
+
+        $groom = $workspace->groom_name ?? 'Nguyễn Hoàng Quốc Trung';
+        $bride = $workspace->bride_name ?? 'Lê Thị Hồng Vân';
+        $date = $workspace->wedding_date ? (is_string($workspace->wedding_date) ? $workspace->wedding_date : $workspace->wedding_date->format('Y-m-d')) : '2026-10-24';
+        $location = $workspace->wedding_location ?? 'TP. Hồ Chí Minh';
+        $budget = (float) ($workspace->budget_cap ?? 250000000.00);
+        $guests = (int) ($workspace->estimated_guests ?? 200);
+
+        $titleLower = Str::lower($task->title);
+        $recommendationText = '';
+        $suggestedInput = [];
+
+        if (Str::contains($titleLower, ['ngân sách', 'chi phí', 'bảng giá', 'tài chính'])) {
+            $recommendationText = 'AI đề xuất chốt ngân sách trần '.number_format($budget).' đ dựa trên quy mô '.$guests.' khách tại '.$location.'. Mức chi phí bình quân đạt '.number_format((int) ($budget / max($guests, 1))).' đ/khách.';
+            $suggestedInput = ['budget_cap' => $budget];
+        } elseif (Str::contains($titleLower, ['khách mời', 'sơ đồ bàn', 'danh sách khách'])) {
+            $tables = (int) ceil($guests / 10);
+            $recommendationText = 'Dựa trên quy mô tiệc cưới '.$guests.' khách tại '.$location.', AI đề xuất lập danh sách 5 nhóm khách mời (Gia đình, Họ hàng, Bạn chú rể, Bạn cô dâu, Đồng nghiệp) phân bổ thành '.$tables.' bàn tiệc (10 người/bàn).';
+            $suggestedInput = ['estimated_guests' => $guests];
+        } elseif (Str::contains($titleLower, ['thiệp', 'mẫu thiệp', 'decor', 'tone màu', 'trang trí'])) {
+            $recommendationText = 'Grounded AI đề xuất mẫu thiệp 3D [Royal Gold - Hoàng Gia Dát Vàng 24K] mở sáp nến độc bản cho đám cưới '.$groom.' & '.$bride.' ngày '.$date.'.';
+            $suggestedInput = ['template_slug' => 'royal-gold'];
+        } else {
+            $cost = (float) ($task->estimated_cost ?: 35000000.00);
+            $vendor = $task->vendor_info ?: 'Trung Tâm Tiệc Cưới Luxury Palace';
+            $recommendationText = 'AI phân tích báo giá đối tác tại '.$location.': Đề xuất chốt hợp đồng & thanh toán cọc đợt 1 cho ['.$vendor.'] chi phí '.number_format($cost).' đ.';
+            $suggestedInput = ['vendor_name' => $vendor, 'actual_cost' => $cost];
+        }
+
+        return [
+            'success' => true,
+            'workspaceContext' => [
+                'couple_name' => "{$groom} & {$bride}",
+                'wedding_date' => $date,
+                'wedding_location' => $location,
+                'budget_cap' => $budget,
+                'estimated_guests' => $guests,
+                'venue_name' => $workspace->venue_name ?? 'Trung Tâm Tiệc Cưới Luxury Palace',
+            ],
+            'aiRecommendation' => [
+                'title' => "Gợi Ý Đề Xuất Thông Minh Cho Bước: [{$task->title}]",
+                'description' => $recommendationText,
+                'suggestedInput' => $suggestedInput,
+            ],
+            'task' => $task,
+        ];
+    }
+
+    /**
      * Execute a 1-click system action for a given wedding task.
      */
     public function executeTaskAction(WeddingTask $task, array $input = []): array
@@ -34,13 +100,13 @@ class WeddingTaskExecutionService
         }
 
         $titleLower = Str::lower($task->title);
-        $resultMessage = 'Đã hoàn thành công việc qua hệ thống.';
+        $resultMessage = 'Đã thực thi thành công đề xuất của AI vào hệ thống.';
 
         // 1. Budget Tasks
         if (Str::contains($titleLower, ['ngân sách', 'chi phí', 'bảng giá', 'tài chính'])) {
             $budgetCap = (float) ($input['budget_cap'] ?? $workspace->budget_cap ?? 250000000.00);
             $workspace->update(['budget_cap' => $budgetCap]);
-            $resultMessage = 'Đã chốt ngân sách trần '.number_format($budgetCap).' đ vào hệ thống.';
+            $resultMessage = 'Đã chốt ngân sách trần '.number_format($budgetCap).' đ theo đề xuất AI.';
         }
         // 2. Guest List Tasks
         elseif (Str::contains($titleLower, ['khách mời', 'sơ đồ bàn', 'danh sách khách'])) {
@@ -60,7 +126,7 @@ class WeddingTaskExecutionService
                     ]);
                 }
             }
-            $resultMessage = 'Đã khởi tạo danh sách khách mời dự kiến '.$estimatedGuests.' khách.';
+            $resultMessage = 'Đã khởi tạo danh sách khách mời dự kiến '.$estimatedGuests.' khách theo đề xuất AI.';
         }
         // 3. 3D Invitation Tasks
         elseif (Str::contains($titleLower, ['thiệp', 'mẫu thiệp', 'decor', 'tone màu', 'trang trí'])) {
@@ -77,7 +143,7 @@ class WeddingTaskExecutionService
                     'venue_address' => '123 Nguyễn Huệ, Quận 1, TP. HCM',
                 ]
             );
-            $resultMessage = 'Đã kích hoạt mẫu thiệp 3D độc bản ['.$templateSlug.'] vào hệ thống.';
+            $resultMessage = 'Đã áp dụng mẫu thiệp 3D độc bản ['.$templateSlug.'] theo đề xuất AI.';
         }
         // 4. Vendor Contract Tasks
         elseif (Str::contains($titleLower, ['sảnh tiệc', 'nhà hàng', 'chụp ảnh', 'nhẫn', 'studio', 'vendor', 'cọc'])) {
@@ -105,7 +171,7 @@ class WeddingTaskExecutionService
                 'vendor_info' => $vendorName,
             ]);
 
-            $resultMessage = 'Đã ghi nhận hợp đồng cọc với ['.$vendorName.'] chi phí '.number_format($cost).' đ.';
+            $resultMessage = 'Đã ghi nhận hợp đồng cọc với ['.$vendorName.'] chi phí '.number_format($cost).' đ theo đề xuất AI.';
         }
 
         // Mark task and all its subtasks as 100% completed

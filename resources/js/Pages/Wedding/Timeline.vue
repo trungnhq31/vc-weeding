@@ -27,10 +27,21 @@ const isAiDrawerOpen = ref(false);
 const showAiPersonalizeModal = ref(false);
 const showQuickExecuteModal = ref(false);
 const taskForQuickExecute = ref<any>(null);
+const aiDataForModal = ref<any>(null);
 
-const openQuickExecuteModal = (task: any) => {
+const openQuickExecuteModal = async (task: any) => {
     taskForQuickExecute.value = task;
+    aiDataForModal.value = null;
     showQuickExecuteModal.value = true;
+    try {
+        const res = await fetch(`/wedding/tasks/${task.id}/ai-recommendation`);
+        const data = await res.json();
+        if (data.success) {
+            aiDataForModal.value = data;
+        }
+    } catch (e) {
+        console.error('Error fetching AI recommendation:', e);
+    }
 };
 
 const handleExecuteTaskAction = async ({ taskId, input }: { taskId: string; input: Record<string, any> }) => {
@@ -553,10 +564,10 @@ const handleAddTask = () => {
                                             <button 
                                                 v-if="!task.is_completed"
                                                 @click.stop="openQuickExecuteModal(task)"
-                                                class="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[10px] shadow-2xs flex items-center gap-1 transition-all cursor-pointer uppercase tracking-wider"
+                                                class="px-3.5 py-1 rounded-full bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 hover:from-rose-800 hover:to-slate-800 text-white font-extrabold text-[10px] shadow-2xs flex items-center gap-1 transition-all cursor-pointer uppercase tracking-wider border border-rose-800/40 transform hover:-translate-y-0.5"
                                             >
-                                                <Zap class="w-3 h-3 text-amber-200 fill-amber-200" />
-                                                <span>Thực hiện 1-Click</span>
+                                                <Sparkles class="w-3 h-3 text-amber-300 animate-pulse" />
+                                                <span>✨ AI Smart Suggest</span>
                                             </button>
                                         </div>
                                     </div>
@@ -918,10 +929,11 @@ const handleAddTask = () => {
         <!-- Grounded AI Drawer -->
         <GroundedAiDrawer :is-open="isAiDrawerOpen" @close="isAiDrawerOpen = false" />
 
-        <!-- Quick Task Execute Modal (1-Click System Execution) -->
+        <!-- Quick Task Execute Modal (AI Smart Suggest Execution) -->
         <QuickTaskExecuteModal 
             :show="showQuickExecuteModal"
             :task="taskForQuickExecute"
+            :ai-data="aiDataForModal"
             :workspace-budget-cap="workspace?.budget_cap"
             :estimated-guests="workspace?.estimated_guests"
             @close="showQuickExecuteModal = false"

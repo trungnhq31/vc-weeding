@@ -224,6 +224,14 @@ class WeddingTimelineController extends Controller
         ]);
     }
 
+    public function getTaskAiRecommendation(Request $request, string $taskId, \App\Services\WeddingTaskExecutionService $executionService): JsonResponse
+    {
+        $task = WeddingTask::findOrFail($taskId);
+        $result = $executionService->getTaskAiRecommendation($task);
+
+        return response()->json($result);
+    }
+
     public function executeTaskAction(Request $request, string $taskId, \App\Services\WeddingTaskExecutionService $executionService): JsonResponse
     {
         $task = WeddingTask::findOrFail($taskId);
