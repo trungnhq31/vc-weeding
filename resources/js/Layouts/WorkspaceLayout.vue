@@ -12,13 +12,17 @@ import {
   Sparkles, 
   Eye, 
   ChevronRight,
+  ChevronLeft,
   Menu,
   X,
   Heart,
   LayoutDashboard,
   Search,
   Bell,
-  Command
+  Command,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelLeft
 } from 'lucide-vue-next';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
 import CommandPaletteModal from '@/Components/Wedding/CommandPaletteModal.vue';
@@ -31,6 +35,12 @@ const props = defineProps<{
 const isAiDrawerOpen = ref(false);
 const isMobileSidebarOpen = ref(false);
 const isCommandPaletteOpen = ref(false);
+const isSidebarCollapsed = ref(localStorage.getItem('eloria_sidebar_collapsed') === 'true');
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+  localStorage.setItem('eloria_sidebar_collapsed', isSidebarCollapsed.value ? 'true' : 'false');
+};
 
 const navigationItems = [
   { id: 'timeline', label: 'Lộ trình & Task', href: '/wedding/timeline', icon: Calendar },
@@ -49,6 +59,10 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
     e.preventDefault();
     isCommandPaletteOpen.value = !isCommandPaletteOpen.value;
   }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+    e.preventDefault();
+    toggleSidebar();
+  }
 };
 
 onMounted(() => {
@@ -64,70 +78,95 @@ onUnmounted(() => {
   <Head :title="title ? `${title} — Eloria OS` : 'Eloria — The Operating System for Planning a Wedding'" />
 
   <div class="min-h-screen bg-[#FAF8F5] bg-gradient-to-br from-rose-50/60 via-[#FAF8F5] to-amber-50/40 text-slate-900 font-sans flex antialiased">
-    <!-- Desktop Left Sidebar Navigation -->
-    <aside class="hidden lg:flex w-64 bg-white/90 backdrop-blur-xl border-r border-rose-100/80 flex-col justify-between sticky top-0 h-screen z-30 shadow-sm shrink-0">
-      <div class="p-6 space-y-8 overflow-y-auto">
+    <!-- Desktop Left Sidebar Navigation (Collapsible) -->
+    <aside 
+      class="hidden lg:flex bg-white/90 backdrop-blur-xl border-r border-rose-100/80 flex-col justify-between sticky top-0 h-screen z-30 shadow-sm shrink-0 transition-all duration-300 ease-in-out overflow-hidden"
+      :class="isSidebarCollapsed ? 'w-20' : 'w-64'"
+    >
+      <div class="p-4 space-y-6 overflow-y-auto overflow-x-hidden">
         <!-- Brand Logo & Workspace Header -->
         <div class="space-y-3">
-          <Link href="/" class="flex items-center gap-3 group">
-            <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-10 w-auto rounded-xl object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300" />
-            <span class="font-serif text-2xl font-extrabold text-slate-900 tracking-tight">Eloria</span>
-          </Link>
+          <div class="flex items-center justify-between" :class="isSidebarCollapsed ? 'flex-col gap-2' : ''">
+            <Link href="/" class="flex items-center gap-3 group overflow-hidden">
+              <img src="/images/logo/eloria-logo-icon.jpg" alt="Eloria Logo" class="h-10 w-10 min-w-10 rounded-xl object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300" />
+              <span v-if="!isSidebarCollapsed" class="font-serif text-2xl font-extrabold text-slate-900 tracking-tight whitespace-nowrap">Eloria</span>
+            </Link>
+
+            <!-- Toggle Collapse Button -->
+            <button 
+              @click="toggleSidebar"
+              class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-rose-50 transition cursor-pointer"
+              :title="isSidebarCollapsed ? 'Mở rộng Sidebar (⌘B)' : 'Thu gọn Sidebar (⌘B)'"
+            >
+              <PanelLeftOpen v-if="isSidebarCollapsed" class="w-5 h-5 text-rose-700" />
+              <PanelLeftClose v-else class="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
 
           <!-- Active Workspace Pill -->
-          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-rose-100/80 to-amber-50/70 border border-rose-200/60 text-rose-950 flex items-center justify-between shadow-2xs">
-            <div class="text-xs space-y-0.5 min-w-0 flex-1 pr-2">
-              <span class="text-[10px] font-bold text-rose-700 uppercase tracking-widest block">WORKSPACE DÂU RỂ</span>
+          <div 
+            class="p-3 rounded-2xl bg-gradient-to-r from-rose-100/80 to-amber-50/70 border border-rose-200/60 text-rose-950 flex items-center justify-between shadow-2xs"
+            :class="isSidebarCollapsed ? 'justify-center p-2.5' : ''"
+          >
+            <div v-if="!isSidebarCollapsed" class="text-xs space-y-0.5 min-w-0 flex-1 pr-2">
+              <span class="text-[10px] font-bold text-rose-700 uppercase tracking-widest block whitespace-nowrap">WORKSPACE DÂU RỂ</span>
               <span class="font-bold font-serif text-slate-900 text-xs leading-snug line-clamp-2 block" :title="($page.props as any).workspace?.name">
                 {{ ($page.props as any).workspace?.groom_name && ($page.props as any).workspace?.bride_name ? `Đám Cưới ${($page.props as any).workspace.groom_name} & ${($page.props as any).workspace.bride_name}` : (($page.props as any).workspace?.name || 'Đám Cưới Quốc Trung & Hồng Vân') }}
               </span>
             </div>
-            <Heart class="w-4 h-4 text-rose-500 fill-rose-500 shrink-0" />
+            <Heart class="w-4 h-4 text-rose-500 fill-rose-500 shrink-0" :title="isSidebarCollapsed ? 'Workspace Dâu Rể Active' : ''" />
           </div>
         </div>
 
         <!-- Navigation Links Menu -->
         <nav class="space-y-1.5">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2">QUẢN LÝ KẾ HOẠCH</span>
+          <span v-if="!isSidebarCollapsed" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 block mb-2 whitespace-nowrap">QUẢN LÝ KẾ HOẠCH</span>
+          
           <Link
             v-for="item in navigationItems"
             :key="item.id"
             :href="item.href"
-            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
+            :title="isSidebarCollapsed ? item.label : ''"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
             :class="[
               activeNav === item.id || page.url.startsWith(item.href)
                 ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold'
-                : 'text-slate-600 hover:text-rose-900 hover:bg-rose-50/80'
+                : 'text-slate-600 hover:text-rose-900 hover:bg-rose-50/80',
+              isSidebarCollapsed ? 'justify-center px-0' : ''
             ]"
           >
             <component :is="item.icon" class="w-4 h-4 shrink-0" />
-            <span>{{ item.label }}</span>
+            <span v-if="!isSidebarCollapsed" class="whitespace-nowrap">{{ item.label }}</span>
           </Link>
         </nav>
       </div>
 
       <!-- Left Sidebar Footer Actions -->
-      <div class="p-6 border-t border-rose-100/80 space-y-3 bg-rose-50/30">
+      <div class="p-4 border-t border-rose-100/80 space-y-2.5 bg-rose-50/30">
         <!-- AI Assistant Drawer Trigger Button -->
         <button
           @click="isAiDrawerOpen = true"
-          class="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 text-white font-semibold text-xs shadow-md hover:shadow-lg transition flex items-center justify-between cursor-pointer"
+          :title="isSidebarCollapsed ? 'Grounded AI Assistant' : ''"
+          class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 text-white font-semibold text-xs shadow-md hover:shadow-lg transition flex items-center justify-between cursor-pointer"
+          :class="isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5'"
         >
           <div class="flex items-center gap-2">
-            <Sparkles class="w-4 h-4 text-rose-300" />
-            <span>Grounded AI</span>
+            <Sparkles class="w-4 h-4 text-rose-300 shrink-0" />
+            <span v-if="!isSidebarCollapsed" class="whitespace-nowrap">Grounded AI</span>
           </div>
-          <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+          <span v-if="!isSidebarCollapsed" class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
         </button>
 
         <!-- Preview Live Invitation -->
         <Link
           href="/wedding"
           target="_blank"
-          class="w-full px-3.5 py-2 rounded-xl bg-white border border-rose-200/80 text-rose-900 font-semibold text-xs hover:bg-rose-50 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+          :title="isSidebarCollapsed ? 'Xem Thiệp Khách Mời' : ''"
+          class="w-full py-2 rounded-xl bg-white border border-rose-200/80 text-rose-900 font-semibold text-xs hover:bg-rose-50 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+          :class="isSidebarCollapsed ? 'px-0' : 'px-3.5'"
         >
-          <Eye class="w-3.5 h-3.5 text-rose-600" />
-          <span>Xem Thiệp Khách Mời</span>
+          <Eye class="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span v-if="!isSidebarCollapsed" class="whitespace-nowrap">Xem Thiệp Khách Mời</span>
         </Link>
       </div>
     </aside>
@@ -139,7 +178,7 @@ onUnmounted(() => {
         <span class="font-serif font-bold text-xl text-slate-900">Eloria</span>
       </Link>
 
-      <button @click="isMobileSidebarOpen = !isMobileSidebarOpen" class="p-2 rounded-xl text-slate-700 hover:bg-rose-50">
+      <button @click="isMobileSidebarOpen = !isMobileSidebarOpen" class="p-2 rounded-xl text-slate-700 hover:bg-rose-50 cursor-pointer">
         <Menu v-if="!isMobileSidebarOpen" class="w-6 h-6" />
         <X v-else class="w-6 h-6" />
       </button>
@@ -150,7 +189,7 @@ onUnmounted(() => {
       <div class="w-72 bg-white h-full p-6 space-y-6 shadow-2xl overflow-y-auto" @click.stop>
         <div class="flex items-center justify-between border-b border-slate-100 pb-4">
           <span class="font-serif font-bold text-lg text-slate-900">Eloria OS</span>
-          <button @click="isMobileSidebarOpen = false"><X class="w-5 h-5 text-slate-400" /></button>
+          <button @click="isMobileSidebarOpen = false" class="cursor-pointer"><X class="w-5 h-5 text-slate-400" /></button>
         </div>
 
         <nav class="space-y-2">
@@ -178,6 +217,15 @@ onUnmounted(() => {
       <!-- Sticky Glassmorphism Top Header Bar (Desktop) -->
       <header class="hidden lg:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-rose-100/80 px-8 h-16 items-center justify-between shadow-2xs">
         <div class="flex items-center gap-3 text-xs">
+          <!-- Sidebar Toggle Icon Button on Top Bar -->
+          <button 
+            @click="toggleSidebar"
+            class="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-rose-50 transition cursor-pointer"
+            :title="isSidebarCollapsed ? 'Mở rộng Left Navigation (⌘B)' : 'Thu gọn Left Navigation (⌘B)'"
+          >
+            <PanelLeft class="w-4 h-4 text-slate-600" />
+          </button>
+          
           <span class="font-bold text-rose-600 uppercase tracking-widest text-[10px]">ELORIA OS WORKSPACE</span>
           <span class="text-slate-300">/</span>
           <h1 class="font-serif font-bold text-slate-900 text-sm">{{ title || 'Workspace Management' }}</h1>
