@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Guest\Actions;
 
-use App\Modules\Guest\Models\Guest;
+use App\Models\Guest;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ExportGuestListAction

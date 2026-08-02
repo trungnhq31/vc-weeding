@@ -22,11 +22,10 @@ import {
   Layers,
   LayoutGrid,
   FileText,
-  Sliders,
-  SlidersHorizontal
+  Sliders
 } from 'lucide-vue-next';
 
-// Import All 10 Template Components
+// Import All 10 Template Components for Instant Dynamic In-page Fallback Rendering
 import PastelTemplate from '@/Components/Wedding/Templates/PastelTemplate.vue';
 import RoyalGoldTemplate from '@/Components/Wedding/Templates/RoyalGoldTemplate.vue';
 import ModernSlateTemplate from '@/Components/Wedding/Templates/ModernSlateTemplate.vue';
@@ -54,6 +53,7 @@ const props = defineProps<{
 
 const activeSubNav = ref<'templates' | 'details' | 'design' | 'features'>('templates');
 const previewMode = ref<'mobile' | 'desktop'>('mobile');
+const useIframe = ref(true);
 const isSaved = ref(false);
 const isSaving = ref(false);
 const saveMessage = ref('');
@@ -116,7 +116,7 @@ const selectedTemplate = computed(() => {
   return templateCatalog.find(t => t.id === form.template_id) || templateCatalog[0];
 });
 
-// Map Selected Template ID directly to the Real Vue Template Component!
+// Real Template Component Dynamic Mapping
 const activeTemplateComponent = computed(() => {
   const map: Record<string, any> = {
     'romantic-pastel': PastelTemplate,
@@ -134,6 +134,10 @@ const activeTemplateComponent = computed(() => {
     'minimalist-ivory': ModernSlateTemplate,
   };
   return map[form.template_id] || PastelTemplate;
+});
+
+const iframeSrc = computed(() => {
+  return `/invitations/${form.template_id}`;
 });
 
 const saveCms = async () => {
@@ -171,8 +175,8 @@ const externalPreviewUrl = computed(() => {
   <WorkspaceLayout title="Tùy Biến Thiệp Cưới" active-nav="invitation_editor">
     <div class="space-y-6 font-sans max-w-7xl mx-auto px-2 md:px-6 py-6">
       
-      <!-- Top Main Action Bar -->
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-rose-100 pb-4">
+      <!-- Top Main Header Action Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-rose-100 pb-4">
         <div>
           <h1 class="text-2xl font-serif font-extrabold text-slate-900 flex items-center gap-2">
             <Sparkles class="w-6 h-6 text-[#881337]" />
@@ -188,7 +192,7 @@ const externalPreviewUrl = computed(() => {
             class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer transition"
           >
             <ExternalLink class="w-4 h-4 text-slate-500" />
-            <span>Mở Thiệp Trong Tab Mới</span>
+            <span>Mở Thiệp Tab Mới</span>
           </a>
 
           <button 
@@ -197,7 +201,7 @@ const externalPreviewUrl = computed(() => {
             class="px-6 py-2.5 rounded-2xl bg-[#881337] hover:bg-[#70102d] text-white font-extrabold text-xs shadow-lg flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
           >
             <Save class="w-4 h-4 text-amber-300" />
-            <span>{{ isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi CMS' }}</span>
+            <span>{{ isSaving ? 'Đang lưu...' : 'Lưu CMS' }}</span>
           </button>
         </div>
       </div>
@@ -211,53 +215,46 @@ const externalPreviewUrl = computed(() => {
         <button @click="isSaved = false" class="text-xs underline font-bold cursor-pointer">Đóng</button>
       </div>
 
-      <!-- HORIZONTAL SUB NAVIGATION BAR (Thanh Điều Hướng Phụ CMS) -->
-      <div class="bg-white p-2 rounded-3xl border border-rose-100 shadow-md flex items-center justify-between overflow-x-auto gap-2">
-        <div class="flex items-center gap-2">
-          <button 
-            @click="activeSubNav = 'templates'"
-            class="px-6 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-            :class="activeSubNav === 'templates' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
-          >
-            <LayoutGrid class="w-4 h-4 text-amber-300" />
-            <span>1. Chọn Mẫu Thiệp (10 Templates)</span>
-          </button>
+      <!-- SUB NAVIGATION GRID (Fixed Layout 4-Column Grid, No Horizontal Scrollbar) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-white p-2 rounded-3xl border border-rose-100 shadow-md">
+        <button 
+          @click="activeSubNav = 'templates'"
+          class="px-4 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+          :class="activeSubNav === 'templates' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
+        >
+          <LayoutGrid class="w-4 h-4 text-amber-300 shrink-0" />
+          <span>1. Mẫu Thiệp (10 Mẫu)</span>
+        </button>
 
-          <button 
-            @click="activeSubNav = 'details'"
-            class="px-6 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-            :class="activeSubNav === 'details' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
-          >
-            <Calendar class="w-4 h-4 text-amber-300" />
-            <span>2. Thông Tin Lễ Cưới & Địa Điểm</span>
-          </button>
+        <button 
+          @click="activeSubNav = 'details'"
+          class="px-4 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+          :class="activeSubNav === 'details' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
+        >
+          <Calendar class="w-4 h-4 text-amber-300 shrink-0" />
+          <span>2. Thông Tin Lễ Cưới</span>
+        </button>
 
-          <button 
-            @click="activeSubNav = 'design'"
-            class="px-6 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-            :class="activeSubNav === 'design' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
-          >
-            <Palette class="w-4 h-4 text-amber-300" />
-            <span>3. Tông Màu & Font Chữ</span>
-          </button>
+        <button 
+          @click="activeSubNav = 'design'"
+          class="px-4 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+          :class="activeSubNav === 'design' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
+        >
+          <Palette class="w-4 h-4 text-amber-300 shrink-0" />
+          <span>3. Tông Màu & Font</span>
+        </button>
 
-          <button 
-            @click="activeSubNav = 'features'"
-            class="px-6 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap"
-            :class="activeSubNav === 'features' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
-          >
-            <Gift class="w-4 h-4 text-amber-300" />
-            <span>4. Tính Năng & Hộp Mừng Cưới</span>
-          </button>
-        </div>
-
-        <div class="px-4 py-2 rounded-2xl bg-rose-50 text-[#881337] font-bold text-xs shrink-0 hidden lg:flex items-center gap-2 border border-rose-100">
-          <Sparkles class="w-4 h-4 text-amber-500" />
-          <span>Mẫu Đang Chọn: <strong>{{ selectedTemplate.name }}</strong></span>
-        </div>
+        <button 
+          @click="activeSubNav = 'features'"
+          class="px-4 py-3 rounded-2xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+          :class="activeSubNav === 'features' ? 'bg-[#881337] text-white shadow-md' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'"
+        >
+          <Gift class="w-4 h-4 text-amber-300 shrink-0" />
+          <span>4. Tính Năng & Mừng Cưới</span>
+        </button>
       </div>
 
-      <!-- Main Workspace 2-Column Grid (Edit Area + Live Template Preview Frame) -->
+      <!-- Main Workspace 2-Column Grid (Edit Area + Pixel-Perfect Live Template Preview Frame) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         <!-- LEFT EDIT AREA (Expanded Width Area for CMS Options) -->
@@ -446,7 +443,7 @@ const externalPreviewUrl = computed(() => {
 
         </div>
 
-        <!-- RIGHT COLUMN: REAL TEMPLATE DYNAMIC PREVIEW FRAME (Loads Real Selected Template Component) -->
+        <!-- RIGHT COLUMN: REAL TEMPLATE DYNAMIC PREVIEW FRAME (PIXEL-PERFECT NO-OVERFLOW IFRAME + COMPONENT) -->
         <div class="lg:col-span-7 sticky top-6 space-y-3">
           
           <!-- Viewport Toolbar & Selected Template Indicator -->
@@ -458,27 +455,27 @@ const externalPreviewUrl = computed(() => {
                 class="px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
                 :class="previewMode === 'mobile' ? 'bg-[#881337] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
               >
-                <Smartphone class="w-3.5 h-3.5" /> Mobile
+                <Smartphone class="w-3.5 h-3.5" /> Mobile (375px)
               </button>
               <button 
                 @click="previewMode = 'desktop'" 
                 class="px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
                 :class="previewMode === 'desktop' ? 'bg-[#881337] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
               >
-                <Monitor class="w-3.5 h-3.5" /> Desktop
+                <Monitor class="w-3.5 h-3.5" /> Desktop (Full)
               </button>
             </div>
 
             <div class="text-xs font-extrabold text-[#881337] flex items-center gap-1.5">
               <Sparkles class="w-4 h-4 text-amber-500 animate-spin" />
-              <span>Đang Tải Giao Diện: {{ selectedTemplate.badge }}</span>
+              <span>Giao Diện: {{ selectedTemplate.badge }}</span>
             </div>
           </div>
 
-          <!-- FULLY SCROLLABLE REAL TEMPLATE COMPONENT CONTAINER -->
+          <!-- FULLY SCROLLABLE REAL TEMPLATE CONTAINER (PIXEL PERFECT NO HORIZONTAL OVERFLOW) -->
           <div 
             class="mx-auto transition-all duration-300 rounded-3xl border-4 border-slate-900 bg-white shadow-2xl overflow-hidden"
-            :class="previewMode === 'mobile' ? 'max-w-[420px]' : 'w-full'"
+            :class="previewMode === 'mobile' ? 'max-w-[400px]' : 'w-full'"
           >
             <!-- Phone Notch Top Bar Header -->
             <div class="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-[10px] font-mono select-none">
@@ -487,9 +484,14 @@ const externalPreviewUrl = computed(() => {
               <span>100% 🔋</span>
             </div>
 
-            <!-- SCROLLABLE CONTAINER rendering REAL TEMPLATE COMPONENT -->
-            <div class="max-h-[680px] overflow-y-auto scroll-smooth">
-              <component :is="activeTemplateComponent" :wishes="[]" :memories="[]" />
+            <!-- IFRAME FOR REAL 100% RESPONSIVE VIEWPORT PREVIEW OR COMPONENT WRAPPER -->
+            <div class="h-[680px] w-full overflow-hidden">
+              <iframe 
+                :key="form.template_id"
+                :src="iframeSrc" 
+                class="w-full h-full border-0 bg-white rounded-b-2xl"
+                title="Dynamic Template Preview"
+              ></iframe>
             </div>
           </div>
 

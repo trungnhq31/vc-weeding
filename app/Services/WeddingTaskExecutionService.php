@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Models\WeddingMilestone;
 use App\Models\WeddingTask;
-use App\Modules\Guest\Models\Guest;
+use App\Models\Guest;
 use App\Modules\Invitation\Models\WorkspaceInvitation;
 use App\Modules\Vendor\Models\Vendor;
 use App\Modules\Workspace\Models\Workspace;
