@@ -25,6 +25,7 @@ interface GuestItem {
   id: string;
   name: string;
   group: string;
+  belongs_to?: string;
   notes?: string;
 }
 
@@ -36,7 +37,8 @@ const props = defineProps<{
 
 const inputName = ref('');
 const inputPhone = ref('');
-const inputGroup = ref('Nhà Trai');
+const inputGroup = ref('Nhà Trai (Họ Hàng)');
+const inputBelongsTo = ref('Chú Rể');
 const inputAddedBy = ref('');
 const inputDiet = ref('Bình thường');
 const inputPax = ref(1);
@@ -56,6 +58,16 @@ const groupsList = [
   'Họ Hàng / Người Thân'
 ];
 
+const belongsToList = [
+  'Chú Rể',
+  'Cô Dâu',
+  'Bố Chú Rể',
+  'Mẹ Chú Rể',
+  'Bố Cô Dâu',
+  'Mẹ Cô Dâu',
+  'Chung Dâu Rể'
+];
+
 const handleSubmit = async () => {
   if (!inputName.value.trim()) return;
   isSubmitting.value = true;
@@ -71,6 +83,7 @@ const handleSubmit = async () => {
         name: inputName.value,
         phone: inputPhone.value,
         group: inputGroup.value,
+        belongs_to: inputBelongsTo.value,
         added_by: inputAddedBy.value,
         dietary_preference: inputDiet.value,
         estimated_count: inputPax.value,
@@ -136,7 +149,7 @@ const handleSubmit = async () => {
             <span>Khách mời <strong>{{ submittedGuestName }}</strong> đã được lưu vào danh sách tiệc cưới.</span>
           </div>
         </div>
-        <button @click="showSuccessToast = false" class="text-xs font-bold underline px-2">Đóng</button>
+        <button @click="showSuccessToast = false" class="text-xs font-bold underline px-2 cursor-pointer">Đóng</button>
       </div>
 
       <!-- Guest Input Card -->
@@ -157,6 +170,17 @@ const handleSubmit = async () => {
               placeholder="VD: Bác Hai, Anh Hoàng Nguyễn, Chị Mai..."
               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#881337] focus:ring-2 focus:ring-rose-100 font-bold text-sm text-slate-900 outline-none"
             />
+          </div>
+
+          <!-- Belongs To (Khách của ai) -->
+          <div class="space-y-1">
+            <label class="block font-bold text-slate-700">Khách Thuộc Sở Hữu Của Ai? <span class="text-rose-600">*</span></label>
+            <select 
+              v-model="inputBelongsTo"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#881337] focus:ring-2 focus:ring-rose-100 font-extrabold text-xs text-slate-900 outline-none bg-white"
+            >
+              <option v-for="b in belongsToList" :key="b" :value="b">👤 Khách của: {{ b }}</option>
+            </select>
           </div>
 
           <!-- Group Select -->
@@ -195,7 +219,7 @@ const handleSubmit = async () => {
 
           <!-- Added By Input -->
           <div class="space-y-1">
-            <label class="block font-bold text-slate-700">Người Thêm (Ai khai báo thông tin này?)</label>
+            <label class="block font-bold text-slate-700">Người Nhập Khai Báo Thông Tin</label>
             <input 
               v-model="inputAddedBy"
               type="text"
@@ -247,7 +271,7 @@ const handleSubmit = async () => {
           >
             <div>
               <strong class="text-slate-900 block font-bold">{{ g.name }}</strong>
-              <span class="text-[10px] text-slate-500">{{ g.group }} • {{ g.notes || 'Đã xác nhận' }}</span>
+              <span class="text-[10px] text-slate-500">Khách của: {{ g.belongs_to || 'Gia đình' }} • {{ g.group }}</span>
             </div>
             <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Đã lưu</span>
           </div>

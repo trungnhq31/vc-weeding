@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
 import { 
@@ -24,7 +24,12 @@ import {
   Sparkles,
   UserPlus,
   Zap,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next';
 
 interface GuestItem {
@@ -71,6 +76,15 @@ const isQuickStoring = ref(false);
 const batchText = ref('');
 const isBatchStoring = ref(false);
 
+// Sorting & Pagination State
+type SortField = 'name' | 'role' | 'phone' | 'table' | 'diet' | 'status';
+type SortOrder = 'asc' | 'desc';
+
+const sortField = ref<SortField>('name');
+const sortOrder = ref<SortOrder>('asc');
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 const groupsList = [
   'Nhà Trai',
   'Nhà Gái',
@@ -85,8 +99,10 @@ const sampleGuests = [
   { id: '2', name: 'Trần Thị Bích', role: 'Nhà Gái', phone: '0909876543', status: 'attending', table: 'Bàn VIP 1 (Họ Hàng)', diet: 'Bình thường', notes: 'Thêm bởi: Cô dâu' },
   { id: '3', name: 'Lê Hoàng Nam', role: 'Bạn Chú Rể', phone: '0912345678', status: 'attending', table: 'Bàn Bạn Học 1', diet: 'Ăn chay', notes: 'Thêm bởi: Bạn học' },
   { id: '4', name: 'Phạm Minh Tâm', role: 'Đồng Nghiệp', phone: '0987654321', status: 'pending', table: 'Bàn Công Ty', diet: 'Bình thường', notes: 'Thêm bởi: Đồng nghiệp' },
-  { id: '5', name: 'Đặng Tuấn Kiệt', role: 'Họ Hàng Dâu', phone: '0933445566', status: 'attending', table: 'Chưa xếp', diet: '-', notes: 'Thêm qua Share Link bởi: Mẹ Cô Dâu' },
-  { id: '6', name: 'Vũ Quốc Huy', role: 'Bạn Chú Rể', phone: '0977889900', status: 'attending', table: 'Chưa xếp', diet: 'Ăn chay', notes: 'Thêm qua Share Link bởi: Phù rể' },
+  { id: '5', name: 'Đặng Tuấn Kiệt', role: 'Họ Hàng Dâu', phone: '0933445566', status: 'attending', table: 'Chưa xếp', diet: '-', notes: 'Thêm qua Share Link: Mẹ Cô Dâu' },
+  { id: '6', name: 'Vũ Quốc Huy', role: 'Bạn Chú Rể', phone: '0977889900', status: 'attending', table: 'Chưa xếp', diet: 'Ăn chay', notes: 'Thêm qua Share Link: Phù rể' },
+  { id: '7', name: 'Hoàng Kim Ngân', role: 'Bạn Cô Dâu', phone: '0911223344', status: 'attending', table: 'Bàn Bạn Học 2', diet: 'Bình thường', notes: 'Thêm bởi: Cô dâu' },
+  { id: '8', name: 'Ngô Tấn Tài', role: 'Đồng Nghiệp', phone: '0988776655', status: 'pending', table: 'Bàn Công Ty', diet: 'Dị ứng hải sản', notes: 'Thêm bởi: Chú rể' },
 ];
 
 const localGuests = ref<any[]>(
@@ -110,8 +126,43 @@ const filteredGuests = computed(() => {
   return localGuests.value.filter(g => 
     g.name.toLowerCase().includes(q) || 
     g.phone.includes(q) || 
-    g.role.toLowerCase().includes(q)
+    g.role.toLowerCase().includes(q) ||
+    g.table.toLowerCase().includes(q)
   );
+});
+
+// Toggle Sorting
+const toggleSort = (field: SortField) => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField.value = field;
+    sortOrder.value = 'asc';
+  }
+};
+
+const sortedGuests = computed(() => {
+  let list = [...filteredGuests.value];
+  list.sort((a, b) => {
+    let valA = (a[sortField.value] || '').toString().toLowerCase();
+    let valB = (b[sortField.value] || '').toString().toLowerCase();
+    if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return list;
+});
+
+// Reset page when search or filters change
+watch([searchQuery, pageSize], () => {
+  currentPage.value = 1;
+});
+
+const totalPages = computed(() => Math.ceil(sortedGuests.value.length / pageSize.value) || 1);
+
+const paginatedGuests = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return sortedGuests.value.slice(start, start + pageSize.value);
 });
 
 // Quick Single Add Handler
@@ -148,7 +199,7 @@ const handleQuickAdd = async () => {
         notes: 'Thêm nhanh 1s',
       });
 
-      // Clear input & focus back
+      // Clear input
       quickName.value = '';
       quickPhone.value = '';
     }
@@ -271,7 +322,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
   <WorkspaceLayout title="Khách Mời & Sơ Đồ Bàn Tiệc" active-nav="guests">
     <div class="space-y-8 font-sans max-w-7xl mx-auto px-2 md:px-6 py-6">
       
-      <!-- Overview Metrics Grid -->
+      <!-- Overview Metrics Grid (Balanced 4-Card Layout) -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
         <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Tổng Khách Mời</span>
@@ -335,19 +386,19 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
       <!-- Tab 1: Guest List & Quick Add Engine -->
       <div v-if="activeTab === 'list'" class="space-y-6">
 
-        <!-- ⚡ INLINE QUICK ADD GUEST BAR (Thêm Nhanh Khách Mời 1s) -->
+        <!-- ⚡ INLINE QUICK ADD GUEST BAR (Clean & Compact 1s Instant Add) -->
         <div class="p-5 md:p-6 rounded-3xl bg-gradient-to-r from-rose-950 via-[#881337] to-rose-900 text-white shadow-xl space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <Zap class="w-5 h-5 text-amber-300 animate-bounce" />
-              <h3 class="font-serif font-extrabold text-white text-base">Thêm Nhanh Khách Mời (1s Instant Add)</h3>
+              <h3 class="font-serif font-extrabold text-white text-base">Thêm Nhanh Khách Mời Tức Thì (1s Quick Add)</h3>
             </div>
             <span class="text-[11px] text-amber-200 font-mono hidden md:inline">Nhấn Enter hoặc click Thêm để chèn khách tức thì</span>
           </div>
 
           <form @submit.prevent="handleQuickAdd" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
             <!-- Guest Name -->
-            <div class="sm:col-span-4">
+            <div class="sm:col-span-5">
               <input 
                 v-model="quickName"
                 type="text"
@@ -368,12 +419,12 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
             </div>
 
             <!-- Phone Number -->
-            <div class="sm:col-span-3">
+            <div class="sm:col-span-2">
               <input 
                 v-model="quickPhone"
                 type="tel"
-                placeholder="📞 Số điện thoại (tùy chọn)..."
-                class="w-full px-4 py-3 rounded-2xl bg-white/95 text-slate-900 font-mono text-xs placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 shadow-inner"
+                placeholder="📞 SĐT..."
+                class="w-full px-3 py-3 rounded-2xl bg-white/95 text-slate-900 font-mono text-xs placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 shadow-inner"
               />
             </div>
 
@@ -382,7 +433,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
               <button 
                 type="submit"
                 :disabled="isQuickStoring"
-                class="w-full h-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95 disabled:opacity-50"
+                class="w-full h-full py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-1 cursor-pointer transition active:scale-95 disabled:opacity-50"
               >
                 <Plus class="w-4 h-4 text-slate-950 stroke-[3]" />
                 <span>+ THÊM NHANH</span>
@@ -391,7 +442,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
           </form>
         </div>
 
-        <!-- SPACIOUS GUEST LIST TABLE CONTAINER -->
+        <!-- RE-STYLED GUEST LIST TABLE CONTAINER WITH SORTING & PAGINATION -->
         <div class="bg-white rounded-3xl border border-rose-100 shadow-lg overflow-hidden space-y-0">
           
           <!-- Table Toolbar -->
@@ -406,8 +457,20 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
               />
             </div>
             
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-semibold text-slate-500">Hiển thị <strong class="text-slate-900">{{ filteredGuests.length }}</strong> khách mời</span>
+            <div class="flex items-center gap-4">
+              <!-- Page Size Selector -->
+              <div class="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Hiển thị:</span>
+                <select 
+                  v-model.number="pageSize" 
+                  class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 text-xs outline-none focus:border-[#881337]"
+                >
+                  <option :value="10">10 dòng / trang</option>
+                  <option :value="20">20 dòng / trang</option>
+                  <option :value="50">50 dòng / trang</option>
+                </select>
+              </div>
+
               <a 
                 href="/wedding/guests/export" 
                 target="_blank"
@@ -418,48 +481,110 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
             </div>
           </div>
 
-          <!-- Table Content with Generous Padding & Spacing -->
+          <!-- Table Content with Interactive Click-to-Sort Headers -->
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs border-collapse">
               <thead>
                 <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[11px]">
-                  <th class="px-6 py-4">Họ và tên</th>
-                  <th class="px-6 py-4">Nhóm / Mối quan hệ</th>
-                  <th class="px-6 py-4">Số điện thoại</th>
-                  <th class="px-6 py-4">Vị trí bàn tiệc</th>
-                  <th class="px-6 py-4">Ghi chú & Khẩu vị</th>
+                  
+                  <!-- Clickable Sort: Name -->
+                  <th @click="toggleSort('name')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Họ và tên</span>
+                      <ArrowUp v-if="sortField === 'name' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'name' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
+                  <!-- Clickable Sort: Group -->
+                  <th @click="toggleSort('role')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Nhóm / Mối quan hệ</span>
+                      <ArrowUp v-if="sortField === 'role' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'role' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
+                  <!-- Clickable Sort: Phone -->
+                  <th @click="toggleSort('phone')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Số điện thoại</span>
+                      <ArrowUp v-if="sortField === 'phone' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'phone' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
+                  <!-- Clickable Sort: Table -->
+                  <th @click="toggleSort('table')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Vị trí bàn tiệc</span>
+                      <ArrowUp v-if="sortField === 'table' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'table' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
+                  <!-- Clickable Sort: Diet -->
+                  <th @click="toggleSort('diet')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Ghi chú & Khẩu vị</span>
+                      <ArrowUp v-if="sortField === 'diet' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'diet' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
                   <th class="px-6 py-4">Nguồn khai báo</th>
-                  <th class="px-6 py-4">Xác nhận RSVP</th>
+
+                  <!-- Clickable Sort: Status -->
+                  <th @click="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                    <div class="flex items-center gap-1.5">
+                      <span>Xác nhận RSVP</span>
+                      <ArrowUp v-if="sortField === 'status' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowDown v-else-if="sortField === 'status' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
+                      <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                  </th>
+
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
                 <tr 
-                  v-for="guest in filteredGuests" 
+                  v-for="guest in paginatedGuests" 
                   :key="guest.id" 
                   class="hover:bg-rose-50/40 transition-colors border-l-4 border-l-transparent hover:border-l-[#881337]"
                 >
                   <td class="px-6 py-4.5 font-extrabold text-slate-900 text-sm">
                     {{ guest.name }}
                   </td>
+
                   <td class="px-6 py-4.5">
                     <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-800 font-bold text-xs shadow-2xs border border-slate-200/60">
                       {{ guest.role }}
                     </span>
                   </td>
+                  
                   <td class="px-6 py-4.5 text-slate-600 font-mono text-xs font-semibold">
                     {{ guest.phone }}
                   </td>
+
                   <td class="px-6 py-4.5 font-bold text-slate-800">
                     {{ guest.table }}
                   </td>
+
                   <td class="px-6 py-4.5 text-slate-600 font-medium">
                     {{ guest.diet }}
                   </td>
+
                   <td class="px-6 py-4.5">
                     <span class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-900 text-[11px] font-bold inline-block">
                       {{ guest.notes }}
                     </span>
                   </td>
+
                   <td class="px-6 py-4.5">
                     <span v-if="guest.status === 'confirmed' || guest.status === 'attending'" class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 w-max">
                       <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" /> Tham dự
@@ -472,8 +597,52 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                     </span>
                   </td>
                 </tr>
+
+                <tr v-if="paginatedGuests.length === 0">
+                  <td colspan="7" class="p-8 text-center text-slate-400 text-xs">
+                    Không tìm thấy khách mời nào phù hợp!
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Table Footer Pagination Bar -->
+          <div class="p-4 md:p-6 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-600">
+            <div>
+              Hiển thị <strong class="text-slate-900 font-bold">{{ (currentPage - 1) * pageSize + 1 }}</strong> - <strong class="text-slate-900 font-bold">{{ Math.min(currentPage * pageSize, sortedGuests.length) }}</strong> trên tổng số <strong class="text-[#881337] font-bold">{{ sortedGuests.length }}</strong> khách mời
+            </div>
+
+            <!-- Page Number Navigation Buttons -->
+            <div class="flex items-center gap-1.5">
+              <button 
+                @click="currentPage--"
+                :disabled="currentPage === 1"
+                class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-bold cursor-pointer"
+              >
+                <ChevronLeft class="w-4 h-4" /> Trang trước
+              </button>
+
+              <div class="flex items-center gap-1 px-2">
+                <button 
+                  v-for="page in totalPages" 
+                  :key="page"
+                  @click="currentPage = page"
+                  class="w-8 h-8 rounded-xl font-bold text-xs transition cursor-pointer"
+                  :class="currentPage === page ? 'bg-[#881337] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'"
+                >
+                  {{ page }}
+                </button>
+              </div>
+
+              <button 
+                @click="currentPage++"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-bold cursor-pointer"
+              >
+                Trang sau <ChevronRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
         </div>
@@ -585,10 +754,17 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
         </div>
 
         <div class="p-6 space-y-4 text-xs">
+          <div class="space-y-1">
+            <label class="block font-bold text-slate-700">Nhóm Khách Mời Cho Danh Sách Này</label>
+            <select v-model="quickGroup" class="w-full p-2.5 rounded-xl border border-slate-200 font-bold bg-white text-xs">
+              <option v-for="g in groupsList" :key="g" :value="g">🏷️ {{ g }}</option>
+            </select>
+          </div>
+
           <p class="text-slate-600">Dán danh sách tên khách mời (mỗi dòng 1 tên) để chèn hàng loạt vào hệ thống:</p>
           <textarea 
             v-model="batchText"
-            rows="8"
+            rows="7"
             placeholder="Nguyễn Văn A&#10;Trần Thị B&#10;Lê Hoàng C..."
             class="w-full p-4 rounded-2xl border border-slate-200 font-mono text-xs text-slate-900 focus:border-[#881337] outline-none"
           ></textarea>
