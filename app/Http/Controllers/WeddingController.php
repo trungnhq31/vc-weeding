@@ -224,6 +224,37 @@ class WeddingController extends Controller
         ]);
     }
 
+    public function quickStoreGuest(Request $request): JsonResponse
+    {
+        $workspace = Workspace::latest()->first();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'group' => 'nullable|string|max:255',
+            'dietary_preference' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $guest = Guest::create([
+            'workspace_id' => $workspace->id,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'] ?? null,
+            'group' => $validated['group'] ?? 'Nhà Trai',
+            'dietary_preference' => $validated['dietary_preference'] ?? '-',
+            'rsvp_status' => 'attending',
+            'table_name' => 'Chưa xếp',
+            'notes' => $validated['notes'] ?? 'Thêm nhanh từ Workspace',
+            'guest_slug' => Str::slug($validated['name']).'-'.Str::random(4),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Đã thêm nhanh khách mời [{$guest->name}]!",
+            'guest' => $guest,
+        ]);
+    }
+
     public function invitationEditor(): Response
     {
         $workspace = Workspace::first();

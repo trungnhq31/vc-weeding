@@ -61,6 +61,7 @@ $weddingRoutes = function () {
     Route::post('/budget/select-venue', [WeddingController::class, 'selectVenue'])->name('wedding.budget.select_venue');
     Route::get('/budget/export', [WeddingController::class, 'exportBudget'])->name('wedding.budget.export');
     Route::get('/guests', [WeddingController::class, 'guests'])->name('wedding.guests');
+    Route::post('/guests/quick-store', [WeddingController::class, 'quickStoreGuest'])->name('wedding.guests.quick_store');
     Route::get('/guests/export', [WeddingController::class, 'exportGuests'])->name('wedding.guests.export');
     Route::get('/documents', [WeddingController::class, 'documents'])->name('wedding.documents');
     Route::get('/invitation-editor', [WeddingController::class, 'invitationEditor'])->name('wedding.invitation_editor');

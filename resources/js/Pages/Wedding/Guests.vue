@@ -22,7 +22,9 @@ import {
   Check,
   X,
   Sparkles,
-  UserPlus
+  UserPlus,
+  Zap,
+  FileSpreadsheet
 } from 'lucide-vue-next';
 
 interface GuestItem {
@@ -56,43 +58,153 @@ const props = defineProps<{
 const activeTab = ref<'list' | 'seating'>('list');
 const draggedGuest = ref<any | null>(null);
 const showShareModal = ref(false);
+const showBatchAddModal = ref(false);
 const isCopied = ref(false);
 const searchQuery = ref('');
 
-const sampleGuests = [
-  { id: '1', name: 'Nguyễn Văn Anh', role: 'Nhà Trai', phone: '0901234567', status: 'confirmed', table: 'Bàn VIP 1 (Họ Hàng)', diet: 'Không cay', notes: 'Thêm bởi: Chú rể' },
-  { id: '2', name: 'Trần Thị Bích', role: 'Nhà Gái', phone: '0909876543', status: 'confirmed', table: 'Bàn VIP 1 (Họ Hàng)', diet: 'Bình thường', notes: 'Thêm bởi: Cô dâu' },
-  { id: '3', name: 'Lê Hoàng Nam', role: 'Bạn Chú Rể', phone: '0912345678', status: 'confirmed', table: 'Bàn Bạn Học 1', diet: 'Ăn chay', notes: 'Thêm bởi: Bạn học' },
-  { id: '4', name: 'Phạm Minh Tâm', role: 'Đồng Nghiệp', phone: '0987654321', status: 'pending', table: 'Bàn Công Ty', diet: 'Bình thường', notes: 'Thêm bởi: Đồng nghiệp' },
-  { id: '5', name: 'Đặng Tuấn Kiệt', role: 'Họ Hàng Dâu', phone: '0933445566', status: 'confirmed', table: 'Chưa xếp', diet: '-', notes: 'Thêm qua Share Link bởi: Mẹ Cô Dâu' },
-  { id: '6', name: 'Vũ Quốc Huy', role: 'Bạn Chú Rể', phone: '0977889900', status: 'confirmed', table: 'Chưa xếp', diet: 'Ăn chay', notes: 'Thêm qua Share Link bởi: Phù rể' },
+// Quick Add Form State
+const quickName = ref('');
+const quickGroup = ref('Nhà Trai');
+const quickPhone = ref('');
+const quickDiet = ref('Bình thường');
+const isQuickStoring = ref(false);
+const batchText = ref('');
+const isBatchStoring = ref(false);
+
+const groupsList = [
+  'Nhà Trai',
+  'Nhà Gái',
+  'Bạn Chú Rể',
+  'Bạn Cô Dâu',
+  'Đồng Nghiệp',
+  'Họ Hàng'
 ];
 
-const guestsList = computed(() => {
-  if (props.dbGuests && props.dbGuests.length > 0) {
-    return props.dbGuests.map(g => ({
-      id: g.id,
-      name: g.name,
-      role: g.group || g.role || 'Khách Mời',
-      phone: g.phone || '-',
-      table: g.table_name || g.table || 'Chưa xếp',
-      diet: g.dietary_preference || g.diet || '-',
-      status: (g.rsvp_status as string) || g.status || 'confirmed',
-      notes: g.notes || 'Thêm qua hệ thống'
-    }));
-  }
-  return sampleGuests;
-});
+const sampleGuests = [
+  { id: '1', name: 'Nguyễn Văn Anh', role: 'Nhà Trai', phone: '0901234567', status: 'attending', table: 'Bàn VIP 1 (Họ Hàng)', diet: 'Không cay', notes: 'Thêm bởi: Chú rể' },
+  { id: '2', name: 'Trần Thị Bích', role: 'Nhà Gái', phone: '0909876543', status: 'attending', table: 'Bàn VIP 1 (Họ Hàng)', diet: 'Bình thường', notes: 'Thêm bởi: Cô dâu' },
+  { id: '3', name: 'Lê Hoàng Nam', role: 'Bạn Chú Rể', phone: '0912345678', status: 'attending', table: 'Bàn Bạn Học 1', diet: 'Ăn chay', notes: 'Thêm bởi: Bạn học' },
+  { id: '4', name: 'Phạm Minh Tâm', role: 'Đồng Nghiệp', phone: '0987654321', status: 'pending', table: 'Bàn Công Ty', diet: 'Bình thường', notes: 'Thêm bởi: Đồng nghiệp' },
+  { id: '5', name: 'Đặng Tuấn Kiệt', role: 'Họ Hàng Dâu', phone: '0933445566', status: 'attending', table: 'Chưa xếp', diet: '-', notes: 'Thêm qua Share Link bởi: Mẹ Cô Dâu' },
+  { id: '6', name: 'Vũ Quốc Huy', role: 'Bạn Chú Rể', phone: '0977889900', status: 'attending', table: 'Chưa xếp', diet: 'Ăn chay', notes: 'Thêm qua Share Link bởi: Phù rể' },
+];
+
+const localGuests = ref<any[]>(
+  props.dbGuests && props.dbGuests.length > 0 
+    ? props.dbGuests.map(g => ({
+        id: g.id,
+        name: g.name,
+        role: g.group || g.role || 'Khách Mời',
+        phone: g.phone || '-',
+        table: g.table_name || g.table || 'Chưa xếp',
+        diet: g.dietary_preference || g.diet || '-',
+        status: (g.rsvp_status as string) || g.status || 'attending',
+        notes: g.notes || 'Thêm qua hệ thống'
+      }))
+    : sampleGuests
+);
 
 const filteredGuests = computed(() => {
-  if (!searchQuery.value.trim()) return guestsList.value;
+  if (!searchQuery.value.trim()) return localGuests.value;
   const q = searchQuery.value.toLowerCase();
-  return guestsList.value.filter(g => 
+  return localGuests.value.filter(g => 
     g.name.toLowerCase().includes(q) || 
     g.phone.includes(q) || 
     g.role.toLowerCase().includes(q)
   );
 });
+
+// Quick Single Add Handler
+const handleQuickAdd = async () => {
+  if (!quickName.value.trim()) return;
+  isQuickStoring.value = true;
+
+  try {
+    const res = await fetch('/wedding/guests/quick-store', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({
+        name: quickName.value,
+        phone: quickPhone.value,
+        group: quickGroup.value,
+        dietary_preference: quickDiet.value,
+        notes: 'Thêm nhanh từ Workspace',
+      }),
+    });
+
+    const data = await res.json();
+    if (data.success && data.guest) {
+      localGuests.value.unshift({
+        id: data.guest.id,
+        name: data.guest.name,
+        role: data.guest.group,
+        phone: data.guest.phone || '-',
+        table: 'Chưa xếp',
+        diet: data.guest.dietary_preference || '-',
+        status: 'attending',
+        notes: 'Thêm nhanh 1s',
+      });
+
+      // Clear input & focus back
+      quickName.value = '';
+      quickPhone.value = '';
+    }
+  } catch (e) {
+    console.error('Quick add failed:', e);
+  } finally {
+    isQuickStoring.value = false;
+  }
+};
+
+// Batch Paste Add Handler
+const handleBatchAdd = async () => {
+  if (!batchText.value.trim()) return;
+  isBatchStoring.value = true;
+
+  const names = batchText.value
+    .split('\n')
+    .map(n => n.trim())
+    .filter(n => n.length > 0);
+
+  for (const name of names) {
+    try {
+      const res = await fetch('/wedding/guests/quick-store', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          name: name,
+          group: quickGroup.value,
+          notes: 'Nhập hàng loạt Zalo/Excel',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.guest) {
+        localGuests.value.unshift({
+          id: data.guest.id,
+          name: data.guest.name,
+          role: data.guest.group,
+          phone: '-',
+          table: 'Chưa xếp',
+          diet: '-',
+          status: 'attending',
+          notes: 'Nhập hàng loạt',
+        });
+      }
+    } catch (e) {
+      console.error('Batch item failed:', e);
+    }
+  }
+
+  batchText.value = '';
+  showBatchAddModal.value = false;
+  isBatchStoring.value = false;
+};
 
 const publicShareUrl = computed(() => {
   if (props.shareUrl) return props.shareUrl;
@@ -119,10 +231,10 @@ const tables = ref([
   { id: 't4', name: 'Bàn Công Ty', capacity: 10, assignedCount: 1, shape: 'round', zone: 'Khu Bên Phải', isOverloaded: false },
 ]);
 
-const unassignedGuests = computed(() => guestsList.value.filter(g => g.table === 'Chưa xếp' || !g.table));
+const unassignedGuests = computed(() => localGuests.value.filter(g => g.table === 'Chưa xếp' || !g.table));
 
 const getTableGuests = (tableName: string) => {
-  return guestsList.value.filter(g => g.table === tableName);
+  return localGuests.value.filter(g => g.table === tableName);
 };
 
 const onDragStart = (guest: any) => {
@@ -143,137 +255,228 @@ const unseatGuest = (guest: any) => {
 
 const recalculateTableCounts = () => {
   tables.value.forEach(table => {
-    const count = guestsList.value.filter(g => g.table === table.name).length;
+    const count = localGuests.value.filter(g => g.table === table.name).length;
     table.assignedCount = count;
     table.isOverloaded = count > table.capacity;
   });
 };
 
-const totalGuests = computed(() => guestsList.value.length);
-const confirmedCount = computed(() => guestsList.value.filter(g => g.status === 'confirmed' || g.status === 'attending').length);
-const pendingCount = computed(() => guestsList.value.filter(g => g.status === 'pending').length);
-const declinedCount = computed(() => guestsList.value.filter(g => g.status === 'declined').length);
+const totalGuests = computed(() => localGuests.value.length);
+const confirmedCount = computed(() => localGuests.value.filter(g => g.status === 'confirmed' || g.status === 'attending').length);
+const pendingCount = computed(() => localGuests.value.filter(g => g.status === 'pending').length);
+const declinedCount = computed(() => localGuests.value.filter(g => g.status === 'declined').length);
 </script>
 
 <template>
   <WorkspaceLayout title="Khách Mời & Sơ Đồ Bàn Tiệc" active-nav="guests">
-    <div class="space-y-8 font-sans">
-      <!-- Overview Metrics -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+    <div class="space-y-8 font-sans max-w-7xl mx-auto px-2 md:px-6 py-6">
+      
+      <!-- Overview Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Tổng Khách Mời</span>
-          <div class="text-2xl font-bold text-slate-900 mt-1 font-mono">{{ totalGuests }} Người</div>
+          <div class="text-3xl font-extrabold text-slate-900 mt-1 font-mono">{{ totalGuests }} Người</div>
         </div>
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Đã Xác Nhận (RSVP Yes)</span>
-          <div class="text-2xl font-bold text-emerald-600 mt-1 font-mono">{{ confirmedCount }} Người</div>
+          <div class="text-3xl font-extrabold text-emerald-600 mt-1 font-mono">{{ confirmedCount }} Người</div>
         </div>
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Chờ Phản Hồi</span>
-          <div class="text-2xl font-bold text-amber-600 mt-1 font-mono">{{ pendingCount }} Người</div>
+          <div class="text-3xl font-extrabold text-amber-600 mt-1 font-mono">{{ pendingCount }} Người</div>
         </div>
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Từ Chối / Bận</span>
-          <div class="text-2xl font-bold text-slate-400 mt-1 font-mono">{{ declinedCount }} Người</div>
+          <div class="text-3xl font-extrabold text-slate-400 mt-1 font-mono">{{ declinedCount }} Người</div>
         </div>
       </div>
 
-      <!-- Tab Navigation & Collaborative Share Bar -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-200 pb-4">
+      <!-- Header Action & Tab Switcher Bar -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-rose-100 pb-4">
         <div class="flex items-center gap-2">
           <button 
             @click="activeTab = 'list'"
-            class="px-4 py-2 rounded-xl font-semibold text-xs transition-all cursor-pointer"
-            :class="activeTab === 'list' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+            class="px-5 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer"
+            :class="activeTab === 'list' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
           >
             Danh Sách Khách Mời (RSVP)
           </button>
           <button 
             @click="activeTab = 'seating'"
-            class="px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-            :class="activeTab === 'seating' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+            class="px-5 py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer"
+            :class="activeTab === 'seating' ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
           >
             <Grid class="w-4 h-4 text-rose-400" />
             Sơ Đồ Bàn Tiệc Kéo Thả (Seating Canvas)
           </button>
         </div>
 
-        <!-- Shareable Link CTA Button -->
-        <button 
-          @click="showShareModal = true"
-          class="px-4 py-2 rounded-xl bg-[#881337] hover:bg-[#70102d] text-white font-extrabold text-xs transition flex items-center gap-2 shadow-md cursor-pointer transform hover:-translate-y-0.5"
-        >
-          <Share2 class="w-4 h-4 text-amber-300" />
-          <span>🔗 Chia Sẻ Link Thêm Khách</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- Batch Add Modal Button -->
+          <button 
+            @click="showBatchAddModal = true"
+            class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition flex items-center gap-2 shadow-2xs cursor-pointer"
+          >
+            <FileSpreadsheet class="w-4 h-4 text-slate-500" />
+            <span>Nhập Hàng Loạt</span>
+          </button>
+
+          <!-- Shareable Link CTA Button -->
+          <button 
+            @click="showShareModal = true"
+            class="px-5 py-2.5 rounded-2xl bg-[#881337] hover:bg-[#70102d] text-white font-extrabold text-xs transition flex items-center gap-2 shadow-lg cursor-pointer transform hover:-translate-y-0.5"
+          >
+            <Share2 class="w-4 h-4 text-amber-300" />
+            <span>🔗 Chia Sẻ Link Thêm Khách</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Tab 1: Guest List Table -->
-      <div v-if="activeTab === 'list'" class="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="relative w-full sm:w-72">
-            <Search class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input 
-              v-model="searchQuery"
-              type="text" 
-              placeholder="Tìm tên, SĐT, nhóm..." 
-              class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-full focus:outline-hidden focus:border-[#881337]" 
-            />
+      <!-- Tab 1: Guest List & Quick Add Engine -->
+      <div v-if="activeTab === 'list'" class="space-y-6">
+
+        <!-- ⚡ INLINE QUICK ADD GUEST BAR (Thêm Nhanh Khách Mời 1s) -->
+        <div class="p-5 md:p-6 rounded-3xl bg-gradient-to-r from-rose-950 via-[#881337] to-rose-900 text-white shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <Zap class="w-5 h-5 text-amber-300 animate-bounce" />
+              <h3 class="font-serif font-extrabold text-white text-base">Thêm Nhanh Khách Mời (1s Instant Add)</h3>
+            </div>
+            <span class="text-[11px] text-amber-200 font-mono hidden md:inline">Nhấn Enter hoặc click Thêm để chèn khách tức thì</span>
           </div>
-          <div class="flex items-center gap-2">
-            <a 
-              href="/wedding/guests/export" 
-              target="_blank"
-              class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
-            >
-              <Download class="w-4 h-4 text-slate-500" /> Xuất CSV
-            </a>
-            <button @click="showShareModal = true" class="px-4 py-2 rounded-xl bg-rose-50 text-rose-900 border border-rose-200 hover:bg-rose-100 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer">
-              <UserPlus class="w-4 h-4 text-[#881337]" /> Mời Người Thân Nhập Khách
-            </button>
-          </div>
+
+          <form @submit.prevent="handleQuickAdd" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
+            <!-- Guest Name -->
+            <div class="sm:col-span-4">
+              <input 
+                v-model="quickName"
+                type="text"
+                required
+                placeholder="👤 Họ và tên khách mời..."
+                class="w-full px-4 py-3 rounded-2xl bg-white/95 text-slate-900 font-bold placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 text-xs shadow-inner"
+              />
+            </div>
+
+            <!-- Group Select -->
+            <div class="sm:col-span-3">
+              <select 
+                v-model="quickGroup"
+                class="w-full px-4 py-3 rounded-2xl bg-white/95 text-slate-900 font-bold outline-none border border-transparent focus:border-amber-300 text-xs shadow-inner"
+              >
+                <option v-for="g in groupsList" :key="g" :value="g">🏷️ {{ g }}</option>
+              </select>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="sm:col-span-3">
+              <input 
+                v-model="quickPhone"
+                type="tel"
+                placeholder="📞 Số điện thoại (tùy chọn)..."
+                class="w-full px-4 py-3 rounded-2xl bg-white/95 text-slate-900 font-mono text-xs placeholder-slate-400 focus:bg-white outline-none border border-transparent focus:border-amber-300 shadow-inner"
+              />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="sm:col-span-2">
+              <button 
+                type="submit"
+                :disabled="isQuickStoring"
+                class="w-full h-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95 disabled:opacity-50"
+              >
+                <Plus class="w-4 h-4 text-slate-950 stroke-[3]" />
+                <span>+ THÊM NHANH</span>
+              </button>
+            </div>
+          </form>
         </div>
 
-        <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-              <th class="p-4">Họ và tên</th>
-              <th class="p-4">Nhóm / Mối quan hệ</th>
-              <th class="p-4">Số điện thoại</th>
-              <th class="p-4">Vị trí bàn tiệc</th>
-              <th class="p-4">Ghi chú & Khẩu vị</th>
-              <th class="p-4">Nguồn khai báo</th>
-              <th class="p-4">Xác nhận RSVP</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="guest in filteredGuests" :key="guest.id" class="hover:bg-slate-50/80 transition-colors">
-              <td class="p-4 font-bold text-slate-900">{{ guest.name }}</td>
-              <td class="p-4">
-                <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">{{ guest.role }}</span>
-              </td>
-              <td class="p-4 text-slate-600 font-mono">{{ guest.phone }}</td>
-              <td class="p-4 font-semibold text-slate-800">{{ guest.table }}</td>
-              <td class="p-4 text-slate-600 font-medium">{{ guest.diet }}</td>
-              <td class="p-4">
-                <span class="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-800 text-[10px] font-bold">
-                  {{ guest.notes }}
-                </span>
-              </td>
-              <td class="p-4">
-                <span v-if="guest.status === 'confirmed' || guest.status === 'attending'" class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1 w-max">
-                  <CheckCircle2 class="w-3 h-3 text-emerald-600" /> Tham dự
-                </span>
-                <span v-else-if="guest.status === 'pending'" class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center gap-1 w-max">
-                  <Clock class="w-3 h-3 text-amber-600" /> Chờ phản hồi
-                </span>
-                <span v-else class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold flex items-center gap-1 w-max">
-                  <XCircle class="w-3 h-3 text-slate-400" /> Bận
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- SPACIOUS GUEST LIST TABLE CONTAINER -->
+        <div class="bg-white rounded-3xl border border-rose-100 shadow-lg overflow-hidden space-y-0">
+          
+          <!-- Table Toolbar -->
+          <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
+            <div class="relative w-full sm:w-80">
+              <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Tìm tên khách, số điện thoại, nhóm..." 
+                class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs w-full focus:outline-hidden focus:border-[#881337] shadow-2xs" 
+              />
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-semibold text-slate-500">Hiển thị <strong class="text-slate-900">{{ filteredGuests.length }}</strong> khách mời</span>
+              <a 
+                href="/wedding/guests/export" 
+                target="_blank"
+                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
+              >
+                <Download class="w-4 h-4 text-slate-500" /> Xuất CSV
+              </a>
+            </div>
+          </div>
+
+          <!-- Table Content with Generous Padding & Spacing -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold text-[11px]">
+                  <th class="px-6 py-4">Họ và tên</th>
+                  <th class="px-6 py-4">Nhóm / Mối quan hệ</th>
+                  <th class="px-6 py-4">Số điện thoại</th>
+                  <th class="px-6 py-4">Vị trí bàn tiệc</th>
+                  <th class="px-6 py-4">Ghi chú & Khẩu vị</th>
+                  <th class="px-6 py-4">Nguồn khai báo</th>
+                  <th class="px-6 py-4">Xác nhận RSVP</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr 
+                  v-for="guest in filteredGuests" 
+                  :key="guest.id" 
+                  class="hover:bg-rose-50/40 transition-colors border-l-4 border-l-transparent hover:border-l-[#881337]"
+                >
+                  <td class="px-6 py-4.5 font-extrabold text-slate-900 text-sm">
+                    {{ guest.name }}
+                  </td>
+                  <td class="px-6 py-4.5">
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-800 font-bold text-xs shadow-2xs border border-slate-200/60">
+                      {{ guest.role }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4.5 text-slate-600 font-mono text-xs font-semibold">
+                    {{ guest.phone }}
+                  </td>
+                  <td class="px-6 py-4.5 font-bold text-slate-800">
+                    {{ guest.table }}
+                  </td>
+                  <td class="px-6 py-4.5 text-slate-600 font-medium">
+                    {{ guest.diet }}
+                  </td>
+                  <td class="px-6 py-4.5">
+                    <span class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-900 text-[11px] font-bold inline-block">
+                      {{ guest.notes }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4.5">
+                    <span v-if="guest.status === 'confirmed' || guest.status === 'attending'" class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 w-max">
+                      <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" /> Tham dự
+                    </span>
+                    <span v-else-if="guest.status === 'pending'" class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1.5 w-max">
+                      <Clock class="w-3.5 h-3.5 text-amber-600" /> Chờ phản hồi
+                    </span>
+                    <span v-else class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold flex items-center gap-1.5 w-max">
+                      <XCircle class="w-3.5 h-3.5 text-slate-400" /> Bận
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
       </div>
 
       <!-- Tab 2: Interactive Seating Planner Canvas -->
@@ -284,7 +487,7 @@ const declinedCount = computed(() => guestsList.value.filter(g => g.status === '
               <h3 class="text-base font-bold text-slate-900">Sơ Đồ Bàn Tiệc Kéo Thả (Drag & Drop Seating Canvas)</h3>
               <p class="text-xs text-slate-500">Kéo thẻ khách mời từ danh sách bên trái thả vào từng bàn tiệc để tự động xếp chỗ</p>
             </div>
-            <button class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition">
+            <button class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition cursor-pointer">
               + Thêm Bàn Tiệc Mới
             </button>
           </div>
@@ -370,11 +573,43 @@ const declinedCount = computed(() => guestsList.value.filter(g => g.status === '
       </div>
     </div>
 
+    <!-- Batch Add Paste List Modal -->
+    <div v-if="showBatchAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
+      <div class="w-full max-w-lg bg-white rounded-3xl border border-rose-100 shadow-2xl overflow-hidden font-sans">
+        <div class="px-6 py-4 bg-gradient-to-r from-rose-900 via-[#881337] to-rose-950 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <FileSpreadsheet class="w-5 h-5 text-amber-300" />
+            <h3 class="font-serif font-extrabold text-white text-base">Nhập Nhanh Hàng Loạt Từ Zalo / Excel</h3>
+          </div>
+          <button @click="showBatchAddModal = false" class="text-white hover:opacity-80 cursor-pointer"><X class="w-5 h-5" /></button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs">
+          <p class="text-slate-600">Dán danh sách tên khách mời (mỗi dòng 1 tên) để chèn hàng loạt vào hệ thống:</p>
+          <textarea 
+            v-model="batchText"
+            rows="8"
+            placeholder="Nguyễn Văn A&#10;Trần Thị B&#10;Lê Hoàng C..."
+            class="w-full p-4 rounded-2xl border border-slate-200 font-mono text-xs text-slate-900 focus:border-[#881337] outline-none"
+          ></textarea>
+
+          <div class="flex justify-end gap-2">
+            <button @click="showBatchAddModal = false" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold cursor-pointer">Hủy</button>
+            <button 
+              @click="handleBatchAdd"
+              :disabled="isBatchStoring"
+              class="px-6 py-2 rounded-xl bg-[#881337] text-white font-extrabold shadow-md cursor-pointer hover:bg-[#70102d]"
+            >
+              {{ isBatchStoring ? 'Đang lưu...' : 'Nhập Hàng Loạt Ngay' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Shareable Collaborative Guest Link Modal -->
     <div v-if="showShareModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
       <div class="w-full max-w-lg bg-white rounded-3xl border border-rose-100 shadow-2xl overflow-hidden font-sans space-y-0">
-        
-        <!-- Modal Header -->
         <div class="px-6 py-4 bg-gradient-to-r from-rose-900 via-[#881337] to-rose-950 text-white flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
@@ -390,14 +625,12 @@ const declinedCount = computed(() => guestsList.value.filter(g => g.status === '
           </button>
         </div>
 
-        <!-- Modal Body -->
         <div class="p-6 space-y-5">
           <div class="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 text-xs text-slate-700 leading-relaxed font-medium space-y-1">
             <span class="font-bold text-[#881337] block">💡 Tiện ích cộng tác người thân:</span>
             <p>Gửi đường link này qua Zalo/Messenger cho Ba Mẹ, Anh chị em hoặc Phù rể/Phù dâu. Họ chỉ cần mở link trên điện thoại là có thể tự điền danh sách khách mời của từng nhà mà không cần tạo tài khoản!</p>
           </div>
 
-          <!-- Share Link Copy Field -->
           <div class="space-y-2">
             <label class="block text-xs font-bold text-slate-800">Đường Link Công Khai Nhập Khách Mời</label>
             <div class="flex items-center gap-2">
@@ -418,20 +651,17 @@ const declinedCount = computed(() => guestsList.value.filter(g => g.status === '
             </div>
           </div>
 
-          <!-- Helper Instructions -->
           <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 text-xs text-slate-600">
             <Sparkles class="w-5 h-5 text-amber-500 shrink-0" />
             <span>Mọi khách mời được nhập qua link sẽ tự động đồng bộ realtime vào bảng quản lý của Dâu Rể.</span>
           </div>
         </div>
 
-        <!-- Modal Footer -->
         <div class="p-5 bg-slate-50 border-t border-slate-100 flex justify-end">
           <button @click="showShareModal = false" class="px-6 py-2.5 rounded-full bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition cursor-pointer">
             Hoàn tất
           </button>
         </div>
-
       </div>
     </div>
   </WorkspaceLayout>
