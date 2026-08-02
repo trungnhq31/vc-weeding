@@ -18,10 +18,19 @@ class WorkspaceInvitation extends Model
         'template_id',
         'custom_title',
         'primary_color',
+        'font_family',
+        'groom_parents',
+        'bride_parents',
+        'event_time',
+        'google_maps_url',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_holder',
         'music_url',
         'cover_photo_url',
         'enable_wax_seal',
         'enable_qr_checkin',
+        'enable_gift_box',
     ];
 
     protected function casts(): array
@@ -29,6 +38,7 @@ class WorkspaceInvitation extends Model
         return [
             'enable_wax_seal' => 'boolean',
             'enable_qr_checkin' => 'boolean',
+            'enable_gift_box' => 'boolean',
         ];
     }
 

@@ -5,25 +5,29 @@ declare(strict_types=1);
 namespace App\Modules\GroundedAI\Actions;
 
 use App\Modules\GroundedAI\Services\GroundedDataQueryService;
+use App\Modules\GroundedAI\Services\OpenAiAgentService;
 
 class QueryGroundedAiAction
 {
     public function __construct(
-        protected GroundedDataQueryService $groundedDataQueryService = new GroundedDataQueryService
+        protected GroundedDataQueryService $groundedDataQueryService = new GroundedDataQueryService,
+        protected OpenAiAgentService $openAiAgentService = new OpenAiAgentService
     ) {}
 
     /**
      * Execute grounded analysis with Zero Hallucination Guarantee.
      *
+     * @param  array<int, array{role: string, content: string}>  $chatHistory
      * @return array{
      *     intent: string,
      *     metrics: array<string, mixed>,
      *     summary_text: string,
      *     insights: array<int, string>,
-     *     recommendations: array<int, string>
+     *     recommendations: array<int, string>,
+     *     openai_reply: string|null
      * }
      */
-    public function execute(string $workspaceId, string $queryOrIntent = 'overview'): array
+    public function execute(string $workspaceId, string $queryOrIntent = 'overview', array $chatHistory = []): array
     {
         $metrics = $this->groundedDataQueryService->getWorkspaceMetrics($workspaceId);
         $normalizedIntent = strtolower(trim($queryOrIntent));
@@ -104,12 +108,16 @@ class QueryGroundedAiAction
             default => sprintf('Báo cáo Tổng quan Eloria Workspace "%s": Ngân sách %.2f/%.2f VNĐ, Tiến độ %d%%, %d Vendors.', $metrics['workspace']['name'], $budget['total_actual'], $budget['budget_cap'], $tasks['progress_percentage'], $vendors['vendors_count']),
         };
 
+        // Try OpenAI Agent Completion if Key exists
+        $openAiReply = $this->openAiAgentService->generateResponse($queryOrIntent, $metrics, $chatHistory);
+
         return [
             'intent' => $intent,
             'metrics' => $metrics,
             'summary_text' => $summaryText,
             'insights' => $insights,
             'recommendations' => $recommendations,
+            'openai_reply' => $openAiReply,
         ];
     }
 }

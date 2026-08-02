@@ -31,6 +31,9 @@ class Workspace extends Model
         'couple_story',
         'budget_cap',
         'currency',
+        'subscription_plan',
+        'subscription_expires_at',
+        'custom_subdomain',
     ];
 
     protected function casts(): array
@@ -38,6 +41,7 @@ class Workspace extends Model
         return [
             'wedding_date' => 'date',
             'budget_cap' => 'decimal:2',
+            'subscription_expires_at' => 'datetime',
         ];
     }
 

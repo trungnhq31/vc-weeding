@@ -31,8 +31,8 @@ class OnboardingController extends Controller
             'invitation_template' => 'nullable|string|in:romantic-pastel,royal-gold,modern-slate,botanical-sage',
         ]);
 
-        $workspaceName = "Đám Cưới " . $validated['groom_name'] . " & " . $validated['bride_name'];
-        $slug = Str::slug($validated['groom_name'] . '-' . $validated['bride_name'] . '-' . rand(100, 999));
+        $workspaceName = 'Đám Cưới '.$validated['groom_name'].' & '.$validated['bride_name'];
+        $slug = Str::slug($validated['groom_name'].'-'.$validated['bride_name'].'-'.rand(100, 999));
 
         $workspace = Workspace::create([
             'name' => $workspaceName,

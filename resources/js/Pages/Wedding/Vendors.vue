@@ -17,6 +17,7 @@ import {
   Palette
 } from 'lucide-vue-next';
 import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
+import OpenStreetMapVendorView from '@/Components/Wedding/OpenStreetMapVendorView.vue';
 
 interface RecommendedVendor {
   id: string;
@@ -79,10 +80,54 @@ const props = defineProps<{
 const selectedVibeState = ref(props.selectedVibe || 'pastel');
 const selectedLocationState = ref(props.selectedLocation || props.workspace?.wedding_location || 'TP. Hồ Chí Minh');
 const selectedCategoryFilter = ref('all');
+const selectedCategoryTab = ref('all');
+const viewMode = ref<'grid' | 'map'>('grid');
+const activeMapVendor = ref<RecommendedVendor | null>(null);
+const selectedVenueForHalls = ref<RecommendedVendor | null>(null);
+const selectedVendorForMap = ref<RecommendedVendor | null>(props.recommendations[0] || null);
+
+const selectVendorForMap = (vendor: RecommendedVendor) => {
+  selectedVendorForMap.value = vendor;
+};
+
+const filteredRecommendations = computed(() => {
+  if (selectedCategoryTab.value === 'all') return props.recommendations;
+  return props.recommendations.filter(r => r.category === selectedCategoryTab.value);
+});
+
+// Map projection helpers for TP.HCM bounds
+const getMapX = (lng?: number) => {
+  if (!lng) return 50;
+  const minLng = 106.65, maxLng = 106.75;
+  const pct = ((lng - minLng) / (maxLng - minLng)) * 100;
+  return Math.min(88, Math.max(12, pct));
+};
+
+const getMapY = (lat?: number) => {
+  if (!lat) return 50;
+  const minLat = 10.70, maxLat = 10.82;
+  const pct = 100 - (((lat - minLat) / (maxLat - minLat)) * 100);
+  return Math.min(88, Math.max(12, pct));
+};
 
 const filterRecommendations = (vibe: string) => {
   selectedVibeState.value = vibe;
   router.get('/wedding/vendors', { vibe, location: selectedLocationState.value }, { preserveState: true, preserveScroll: true });
+};
+
+const getVendorCategoryIcon = (cat: string) => {
+  const map: Record<string, string> = {
+    venue: '🏛️',
+    studio: '📸',
+    photography: '📸',
+    bridal: '👗',
+    attire: '👗',
+    florist: '💐',
+    decor: '💐',
+    makeup: '💄',
+    catering: '🍷',
+  };
+  return map[cat] || '📍';
 };
 
 const vendorsList = ref<VendorItem[]>([...props.vendors]);
@@ -123,6 +168,71 @@ const getCategoryLabel = (cat: string) => {
     other: 'Khác',
   };
   return map[cat] || cat;
+};
+
+const openPaymentModal = (vendor: VendorItem) => {
+  selectedVendorForPayment.value = vendor;
+  paymentAmountInput.value = Math.min(10000000, vendor.unpaid_balance);
+  isPaymentModalOpen.value = true;
+};
+
+const handleRecordPayment = async () => {
+  if (!selectedVendorForPayment.value || paymentAmountInput.value <= 0) return;
+  isSubmitting.value = true;
+
+  try {
+    const response = await fetch(`/wedding/vendors/${selectedVendorForPayment.value.id}/payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+      },
+      body: JSON.stringify({ amount: paymentAmountInput.value })
+    });
+    const data = await response.json();
+    if (data.success || response.ok) {
+      selectedVendorForPayment.value.paid_amount += paymentAmountInput.value;
+      selectedVendorForPayment.value.unpaid_balance = Math.max(0, selectedVendorForPayment.value.contract_amount - selectedVendorForPayment.value.paid_amount);
+      if (selectedVendorForPayment.value.unpaid_balance === 0) {
+        selectedVendorForPayment.value.payment_status = 'fully_paid';
+      } else {
+        selectedVendorForPayment.value.payment_status = 'partially_paid';
+      }
+      isPaymentModalOpen.value = false;
+    }
+  } catch (e) {
+    console.error('Error recording vendor payment:', e);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const handleCreateVendor = async () => {
+  if (!newVendorForm.value.name) return;
+  isSubmitting.value = true;
+
+  try {
+    const response = await fetch('/wedding/vendors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+      },
+      body: JSON.stringify(newVendorForm.value)
+    });
+    const data = await response.json();
+    if (data.success && data.vendor) {
+      vendorsList.value.unshift(data.vendor);
+      isAddModalOpen.value = false;
+    } else {
+      router.reload({ preserveScroll: true });
+      isAddModalOpen.value = false;
+    }
+  } catch (e) {
+    console.error('Error creating vendor:', e);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const bookRecommendedVendor = (rec: RecommendedVendor) => {
@@ -204,19 +314,86 @@ const bookRecommendedVendor = (rec: RecommendedVendor) => {
         </div>
       </div>
 
-      <!-- Curated Recommendations Grid -->
+      <!-- Curated Recommendations Grid & Map Section -->
       <div class="space-y-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-serif font-bold text-rose-950 flex items-center gap-2">
-            <Sparkles class="w-5 h-5 text-rose-600" />
-            Danh Sách Đối Tác Ghép Đôi Cao Nhất (Highest Match Score)
-          </h2>
-          <span class="text-xs font-semibold text-slate-500">Hiển thị {{ recommendations.length }} đối tác chọn lọc</span>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="space-y-1">
+            <h2 class="text-xl font-serif font-bold text-rose-950 flex items-center gap-2">
+              <Sparkles class="w-5 h-5 text-rose-600" />
+              Danh Sách Đối Tác Ghép Đôi AI Matchmaking
+            </h2>
+            <p class="text-xs text-slate-500">Master Catalog do Admin kiểm duyệt & gợi ý theo bối cảnh cặp đôi</p>
+          </div>
+
+          <!-- View Mode Switcher -->
+          <div class="p-1 rounded-2xl bg-white border border-rose-200/80 flex items-center gap-1 shadow-2xs">
+            <button 
+              @click="viewMode = 'grid'" 
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              :class="viewMode === 'grid' ? 'bg-rose-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+            >
+              📋 Danh Sách (Grid)
+            </button>
+            <button 
+              @click="viewMode = 'map'" 
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              :class="viewMode === 'map' ? 'bg-rose-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+            >
+              🗺️ Bản Đồ Tương Tác (Map View)
+            </button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Categorized Category Tabs -->
+        <div class="flex flex-wrap gap-2 pb-2 border-b border-rose-100">
+          <button 
+            @click="selectedCategoryTab = 'all'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'all' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            Tất Cả Hạng Mục ({{ recommendations.length }})
+          </button>
+          <button 
+            @click="selectedCategoryTab = 'venue'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'venue' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            🏛️ Sảnh Tiệc & Nhà Hàng
+          </button>
+          <button 
+            @click="selectedCategoryTab = 'studio'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'studio' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            📸 Chụp Ảnh & Quay Phim
+          </button>
+          <button 
+            @click="selectedCategoryTab = 'attire'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'attire' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            👗 Váy Cưới & Trang Phục
+          </button>
+          <button 
+            @click="selectedCategoryTab = 'florist'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'florist' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            💐 Trang Trí & Decor
+          </button>
+          <button 
+            @click="selectedCategoryTab = 'makeup'" 
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer"
+            :class="selectedCategoryTab === 'makeup' ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50'"
+          >
+            💄 Makeup & Hair
+          </button>
+        </div>
+
+        <!-- 1. Grid View Mode -->
+        <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
-            v-for="rec in recommendations"
+            v-for="rec in filteredRecommendations"
             :key="rec.id"
             class="p-6 rounded-3xl bg-white/90 backdrop-blur-xl border border-rose-100/90 shadow-lg shadow-rose-900/5 hover:border-rose-300 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4 group"
           >
@@ -261,20 +438,289 @@ const bookRecommendedVendor = (rec: RecommendedVendor) => {
             </div>
 
             <!-- Booking & Budget Action -->
-            <div class="pt-4 border-t border-rose-100 flex items-center justify-between gap-3">
+            <div class="pt-4 border-t border-rose-100 flex items-center justify-between gap-2">
               <div class="text-xs">
                 <span class="text-[10px] text-slate-400 block">KHOẢNG GIÁ DỰ KIẾN</span>
                 <span class="font-bold text-rose-950 text-xs">{{ rec.price_label }}</span>
               </div>
 
-              <button
-                @click="bookRecommendedVendor(rec)"
-                class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
-              >
-                + Chốt Vendor
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button
+                  v-if="rec.category === 'venue' || (rec as any).halls"
+                  @click="selectedVenueForHalls = rec"
+                  class="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs transition flex items-center gap-1 cursor-pointer"
+                >
+                  🏛️ Chi Tiết Sảnh
+                </button>
+                <button
+                  @click="bookRecommendedVendor(rec)"
+                  class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1 cursor-pointer"
+                >
+                  + Chốt Vendor
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- 2. Interactive Fullview Right Column OpenStreetMap View Mode -->
+        <div v-else-if="viewMode === 'map'" class="space-y-8">
+          
+          <!-- Top Split View: Left Vendor List + Right OpenStreetMap -->
+          <div class="grid lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Column: Scrollable Vendor List with Click Zoom -->
+            <div class="lg:col-span-4 space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              <div
+                v-for="rec in filteredRecommendations"
+                :key="rec.id"
+                @click="selectVendorForMap(rec)"
+                class="p-4 rounded-2xl border transition-all duration-300 space-y-2 cursor-pointer group"
+                :class="selectedVendorForMap?.id === rec.id ? 'bg-rose-50/80 border-rose-500 shadow-md ring-2 ring-rose-400/30' : 'bg-white border-rose-100 hover:border-rose-300 hover:shadow-sm'"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    {{ rec.vibe_label }}
+                  </span>
+                  <span class="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                    🔥 {{ rec.match_score }}% Match
+                  </span>
+                </div>
+
+                <div>
+                  <h4 class="text-sm font-serif font-bold text-slate-900 group-hover:text-rose-700 transition-colors">{{ rec.name }}</h4>
+                  <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                    <MapPin class="w-3 h-3 text-rose-500 shrink-0" /> {{ rec.district }}, {{ rec.city }}
+                  </p>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-rose-100/60 text-xs">
+                  <span class="font-bold text-slate-900 text-xs">{{ rec.price_label }}</span>
+                  <span class="text-[10px] font-bold text-rose-700 group-hover:underline flex items-center gap-1">
+                    Xem Chi Tiết →
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Full-Height OpenStreetMap View -->
+            <div class="lg:col-span-8 sticky top-24 h-[600px]">
+              <OpenStreetMapVendorView 
+                :vendors="filteredRecommendations" 
+                :selectedVendorId="selectedVendorForMap?.id"
+                @select-vendor="selectVendorForMap"
+                @book-vendor="bookRecommendedVendor"
+              />
+            </div>
+
+          </div>
+
+          <!-- Bottom Rich Contextual Vendor Details Panel (Đẩy Thông Tin Chi Tiết Lên Bên Dưới) -->
+          <div v-if="selectedVendorForMap" class="p-6 md:p-8 rounded-3xl bg-white border border-rose-200 shadow-xl space-y-6 animate-fade-in">
+            
+            <!-- Vendor Selected Header Banner -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-rose-100">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
+                    {{ selectedVendorForMap.vibe_label }}
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold">
+                    {{ selectedVendorForMap.category_name }}
+                  </span>
+                  <div class="flex items-center gap-1 text-xs font-bold text-amber-600">
+                    <Star class="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {{ selectedVendorForMap.rating }}
+                  </div>
+                </div>
+
+                <h3 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">
+                  {{ selectedVendorForMap.name }}
+                </h3>
+
+                <p class="text-xs text-slate-500 flex items-center gap-1">
+                  <MapPin class="w-3.5 h-3.5 text-rose-500" /> {{ selectedVendorForMap.district }}, {{ selectedVendorForMap.city }} • <strong class="text-slate-800">{{ selectedVendorForMap.capacity_text }}</strong>
+                </p>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                  <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">KHOẢNG GIÁ DỰ KIẾN</span>
+                  <span class="text-base font-bold text-rose-950">{{ selectedVendorForMap.price_label }}</span>
+                </div>
+                <button
+                  @click="bookRecommendedVendor(selectedVendorForMap)"
+                  class="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus class="w-4 h-4 text-rose-400" />
+                  Chốt Đối Tác Vào Kế Hoạch
+                </button>
+              </div>
+            </div>
+
+            <!-- IF VENUE / RESTAURANT: Render Hall Catalog & Menu Specs -->
+            <div v-if="selectedVendorForMap.category === 'venue'" class="space-y-6">
+              
+              <!-- Hall Catalog Grid -->
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-base font-serif font-bold text-slate-900 flex items-center gap-2">
+                    <Building2 class="w-4 h-4 text-rose-600" />
+                    Danh Sách Sảnh Tiệc & Sức Chứa (Hall Specifications)
+                  </h4>
+                  <span class="text-xs font-semibold text-rose-700">3 Sảnh Tiệc Đủ Tiêu Chuẩn</span>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-4 font-sans">
+                  <!-- Hall 1 -->
+                  <div class="p-5 rounded-2xl bg-rose-50/50 border border-rose-200/80 space-y-3 hover:bg-rose-50 transition">
+                    <div class="flex items-center justify-between">
+                      <h5 class="font-bold text-slate-900 text-sm">Sảnh Grand Ballroom (Tầng 3)</h5>
+                      <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">Lớn Nhất</span>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                      <li>• Sức chứa: <strong>35 - 50 bàn</strong> (350 - 500 khách)</li>
+                      <li>• Độ cao trần: <strong>7.5m</strong> không cột che tầm nhìn</li>
+                      <li>• Trang bị: Màn hình LED 8K Curved 400 inch</li>
+                      <li>• Giá tối thiểu: <strong>8,500,000đ / Bàn</strong></li>
+                    </ul>
+                    <button 
+                      @click="bookRecommendedVendor(selectedVendorForMap)"
+                      class="w-full py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer text-center"
+                    >
+                      + Chọn Sảnh Này
+                    </button>
+                  </div>
+
+                  <!-- Hall 2 -->
+                  <div class="p-5 rounded-2xl bg-rose-50/50 border border-rose-200/80 space-y-3 hover:bg-rose-50 transition">
+                    <div class="flex items-center justify-between">
+                      <h5 class="font-bold text-slate-900 text-sm">Sảnh Crystal Suite (Tầng 1)</h5>
+                      <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">Ấm Củng</span>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                      <li>• Sức chứa: <strong>15 - 25 bàn</strong> (150 - 250 khách)</li>
+                      <li>• Thiết kế: Kính mờ Châu Âu & thảm hoa hồng</li>
+                      <li>• Sân khấu: Sân khấu xoay 360° sang trọng</li>
+                      <li>• Giá tối thiểu: <strong>6,800,000đ / Bàn</strong></li>
+                    </ul>
+                    <button 
+                      @click="bookRecommendedVendor(selectedVendorForMap)"
+                      class="w-full py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer text-center"
+                    >
+                      + Chọn Sảnh Này
+                    </button>
+                  </div>
+
+                  <!-- Hall 3 -->
+                  <div class="p-5 rounded-2xl bg-rose-50/50 border border-rose-200/80 space-y-3 hover:bg-rose-50 transition">
+                    <div class="flex items-center justify-between">
+                      <h5 class="font-bold text-slate-900 text-sm">Rooftop Sky Garden (Sân Thượng)</h5>
+                      <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Ngoài Trời</span>
+                    </div>
+                    <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                      <li>• Sức chứa: <strong>10 - 20 bàn</strong> (Long Table ngoài trời)</li>
+                      <li>• Bối cảnh: Ngắm hoàng hôn & lung linh đèn LED</li>
+                      <li>• Phong cách: Boho Chic & Outdoor Garden</li>
+                      <li>• Giá tối thiểu: <strong>9,200,000đ / Bàn</strong></li>
+                    </ul>
+                    <button 
+                      @click="bookRecommendedVendor(selectedVendorForMap)"
+                      class="w-full py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer text-center"
+                    >
+                      + Chọn Sảnh Này
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Set Menu & Perks Breakdown -->
+              <div class="grid md:grid-cols-2 gap-6 pt-4 border-t border-rose-100">
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <h5 class="font-serif font-bold text-slate-900 text-sm">Thực Đơn Tiệc Cưới Mẫu 8 Món Cao Cấp</h5>
+                  <p class="text-xs text-slate-600 font-medium">1. Khai vị 3 món Á-Âu • 2. Súp hải sâm tổ yến • 3. Tôm hùm đút lò phô mai • 4. Bò Mỹ sốt rượu vang đỏ • 5. Cá tầm hấp Hongkong • 6. Lẩu nấm hải sản thượng hạng • 7. Cơm chiên hải sản hoàng kim • 8. Chè tuyết yến hạt chia.</p>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-rose-50/60 border border-rose-200/80 space-y-2">
+                  <h5 class="font-serif font-bold text-slate-900 text-sm">Chính Sách Ưu Đãi Độc Quyền Dành Cho Dâu Rể Eloria</h5>
+                  <ul class="text-xs text-slate-700 space-y-1 font-medium">
+                    <li>✓ Miễn phí tháp rượu champagne & bánh cưới 5 tầng</li>
+                    <li>✓ Miễn phí nước ngọt & bia suốt 2.5 giờ diễn ra tiệc</li>
+                    <li>✓ Tặng gói trang trí hoa tươi cơ bản bàn tiệc & cổng đón khách</li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- IF NON-VENUE (STUDIO / BRIDAL / DECOR / MAKEUP): Render Package Plans -->
+            <div v-else class="space-y-6">
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-base font-serif font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles class="w-4 h-4 text-rose-600" />
+                    Bảng Gói Dịch Vụ Trọn Gói (Service Packages & Pricing)
+                  </h4>
+                  <span class="text-xs font-semibold text-rose-700">Ưu Đãi Trực Tiếp Trên Eloria</span>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 font-sans">
+                  <!-- Package 1 -->
+                  <div class="p-6 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50/50 border border-rose-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">GÓI CAO CẤP</span>
+                        <h5 class="font-serif font-bold text-slate-900 text-lg">Gói Signature Luxe</h5>
+                      </div>
+                      <span class="text-lg font-bold text-rose-950">25,000,000đ</span>
+                    </div>
+
+                    <ul class="text-xs text-slate-700 space-y-2 font-medium border-t border-rose-200/60 pt-3">
+                      <li class="flex items-center gap-2">✓ Chụp Studio 3 concept nghệ thuật độc quyền</li>
+                      <li class="flex items-center gap-2">✓ 2 Bộ váy cưới dòng Haute Couture cao cấp nhất</li>
+                      <li class="flex items-center gap-2">✓ Make-up & làm tóc ngày cưới chuyên nghiệp</li>
+                      <li class="flex items-center gap-2">✓ Album Photobook 30x30cm 30 trang ép kim</li>
+                      <li class="flex items-center gap-2">✓ 2 Ảnh cổng lớn kích thước 60x90cm ép gỗ cao cấp</li>
+                    </ul>
+
+                    <button 
+                      @click="bookRecommendedVendor(selectedVendorForMap)"
+                      class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition cursor-pointer text-center"
+                    >
+                      + Đăng Ký Gói Signature
+                    </button>
+                  </div>
+
+                  <!-- Package 2 -->
+                  <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">GÓI TIÊU CHUẨN</span>
+                        <h5 class="font-serif font-bold text-slate-900 text-lg">Gói Basic Elegant</h5>
+                      </div>
+                      <span class="text-lg font-bold text-slate-900">15,000,000đ</span>
+                    </div>
+
+                    <ul class="text-xs text-slate-700 space-y-2 font-medium border-t border-slate-100 pt-3">
+                      <li class="flex items-center gap-2">✓ Chụp Studio 2 concept phong cách Hàn Quốc</li>
+                      <li class="flex items-center gap-2">✓ 1 Váy cưới dòng Premium + 1 Suit chú rể</li>
+                      <li class="flex items-center gap-2">✓ Trang điểm 1 lần tại Studio</li>
+                      <li class="flex items-center gap-2">✓ Album Photobook 20x30cm 20 trang</li>
+                      <li class="flex items-center gap-2">✓ 1 Ảnh cổng lớn kích thước 60x90cm</li>
+                    </ul>
+
+                    <button 
+                      @click="bookRecommendedVendor(selectedVendorForMap)"
+                      class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-900 font-bold text-xs transition cursor-pointer text-center"
+                    >
+                      + Đăng Ký Gói Basic
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
 
@@ -528,6 +974,56 @@ const bookRecommendedVendor = (rec: RecommendedVendor) => {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Ballroom Halls View Modal for Venue Vendors -->
+    <div v-if="selectedVenueForHalls" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+      <div class="max-w-3xl w-full max-h-[88vh] overflow-y-auto rounded-3xl bg-white p-6 space-y-6 shadow-2xl border border-rose-200">
+        <div class="flex items-center justify-between border-b border-rose-100 pb-4">
+          <div>
+            <span class="text-[10px] font-extrabold text-rose-600 uppercase tracking-widest bg-rose-100 px-3 py-1 rounded-full border border-rose-200">
+              THÔNG TIN SẢNH TIỆC & SỨC CHỨA BÀN TIỆC
+            </span>
+            <h2 class="text-xl md:text-2xl font-serif font-bold text-slate-900 mt-2 flex items-center gap-2">
+              🏛️ {{ selectedVenueForHalls.name }}
+            </h2>
+            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <MapPin class="w-3.5 h-3.5 text-rose-500" /> {{ selectedVenueForHalls.district }}, {{ selectedVenueForHalls.city }} • 📞 {{ selectedVenueForHalls.phone }}
+            </p>
+          </div>
+          <button @click="selectedVenueForHalls = null" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 flex items-center justify-center font-bold transition">
+            ✕
+          </button>
+        </div>
+
+        <!-- Halls List Grid -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <div v-for="(hall, hIdx) in ((selectedVenueForHalls as any).halls || [])" :key="hIdx" class="p-5 rounded-2xl bg-rose-50/50 border border-rose-100 space-y-3.5 hover:shadow-md transition flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="h-40 rounded-xl overflow-hidden relative border border-rose-200">
+                <img :src="hall.image" :alt="hall.name" class="w-full h-full object-cover" />
+                <div class="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-amber-300 text-[10px] font-bold">
+                  {{ hall.price_per_table || 'Đơn giá thoả thuận' }}
+                </div>
+              </div>
+              <div>
+                <h3 class="font-serif font-bold text-base text-rose-950">{{ hall.name }}</h3>
+                <p class="text-xs text-emerald-700 font-bold mt-1 flex items-center gap-1">
+                  <Users class="w-3.5 h-3.5 text-emerald-600" /> Sức chứa: {{ hall.capacity_tables }}
+                </p>
+                <p class="text-xs text-slate-600 leading-relaxed mt-2">{{ hall.description }}</p>
+              </div>
+            </div>
+
+            <button
+              @click="bookRecommendedVendor(selectedVenueForHalls); selectedVenueForHalls = null"
+              class="w-full py-2 rounded-xl bg-slate-900 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition text-center mt-2 cursor-pointer"
+            >
+              + Chốt Vendor Sảnh Này
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

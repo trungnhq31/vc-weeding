@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { 
   Calendar, 
@@ -17,9 +17,11 @@ import {
   Heart,
   LayoutDashboard,
   Search,
-  Bell
+  Bell,
+  Command
 } from 'lucide-vue-next';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
+import CommandPaletteModal from '@/Components/Wedding/CommandPaletteModal.vue';
 
 const props = defineProps<{
   title?: string;
@@ -28,6 +30,7 @@ const props = defineProps<{
 
 const isAiDrawerOpen = ref(false);
 const isMobileSidebarOpen = ref(false);
+const isCommandPaletteOpen = ref(false);
 
 const navigationItems = [
   { id: 'timeline', label: 'Lộ trình & Task', href: '/wedding/timeline', icon: Calendar },
@@ -40,6 +43,21 @@ const navigationItems = [
 ];
 
 const page = usePage();
+
+const handleGlobalKeyDown = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    isCommandPaletteOpen.value = !isCommandPaletteOpen.value;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeyDown);
+});
 </script>
 
 <template>
@@ -58,9 +76,9 @@ const page = usePage();
 
           <!-- Active Workspace Pill -->
           <div class="p-3.5 rounded-2xl bg-gradient-to-r from-rose-100/80 to-amber-50/70 border border-rose-200/60 text-rose-950 flex items-center justify-between shadow-2xs">
-            <div class="text-xs space-y-0.5">
+            <div class="text-xs space-y-0.5 min-w-0 flex-1 pr-2">
               <span class="text-[10px] font-bold text-rose-700 uppercase tracking-widest block">WORKSPACE DÂU RỂ</span>
-              <span class="font-bold font-serif text-slate-900 block truncate max-w-[150px]" :title="($page.props as any).workspace?.name">
+              <span class="font-bold font-serif text-slate-900 text-xs leading-snug line-clamp-2 block" :title="($page.props as any).workspace?.name">
                 {{ ($page.props as any).workspace?.groom_name && ($page.props as any).workspace?.bride_name ? `Đám Cưới ${($page.props as any).workspace.groom_name} & ${($page.props as any).workspace.bride_name}` : (($page.props as any).workspace?.name || 'Đám Cưới Quốc Trung & Hồng Vân') }}
               </span>
             </div>
@@ -166,23 +184,27 @@ const page = usePage();
         </div>
 
         <div class="flex items-center gap-4">
-          <!-- Quick Search Bar -->
-          <div class="relative w-64">
-            <input type="text" placeholder="Tìm nhanh task, ngân sách... (Cmd+K)" class="w-full pl-9 pr-3 py-1.5 bg-rose-50/50 border border-rose-200/60 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:border-rose-400" />
+          <!-- Quick Search Bar Trigger -->
+          <button 
+            @click="isCommandPaletteOpen = true"
+            class="relative w-64 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:bg-slate-100 transition flex items-center justify-between cursor-pointer"
+          >
+            <span class="truncate">Tìm nhanh task, thu chi...</span>
+            <kbd class="px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-400 bg-white border border-slate-200 rounded shadow-2xs">⌘K</kbd>
             <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          </div>
+          </button>
 
           <!-- Notifications Bell -->
-          <button class="relative p-2 rounded-xl text-slate-600 hover:bg-rose-50 transition cursor-pointer">
+          <button class="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">
             <Bell class="w-4 h-4 text-slate-700" />
             <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
           </button>
 
           <!-- User Profile Pill -->
-          <div class="flex items-center gap-2.5 pl-3 border-l border-rose-100">
+          <div class="flex items-center gap-2.5 pl-3 border-l border-slate-200">
             <img src="/images/logo/eloria-logo-icon.jpg" alt="Avatar" class="w-8 h-8 rounded-full border border-rose-200 object-cover" />
             <div class="text-left text-xs hidden xl:block">
-              <span class="font-bold text-slate-900 block truncate max-w-[120px]">{{ ($page.props as any).workspace?.groom_name || 'Quốc Trung' }}</span>
+              <span class="font-bold text-slate-900 block whitespace-nowrap">{{ ($page.props as any).workspace?.groom_name || 'Quốc Trung' }}</span>
               <span class="text-[10px] text-slate-400 block">Dâu Rể Owner</span>
             </div>
           </div>
@@ -194,5 +216,12 @@ const page = usePage();
 
     <!-- Grounded AI Assistant Drawer -->
     <GroundedAiDrawer :is-open="isAiDrawerOpen" @close="isAiDrawerOpen = false" />
+
+    <!-- Command Palette Modal -->
+    <CommandPaletteModal 
+      :is-open="isCommandPaletteOpen" 
+      @close="isCommandPaletteOpen = false" 
+      @open-ai="isAiDrawerOpen = true"
+    />
   </div>
 </template>

@@ -33,6 +33,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->string('vendor_info')->nullable();
             $table->json('attachments')->nullable();
+            $table->json('subtasks')->nullable();
             $table->boolean('is_completed')->default(false);
             $table->date('due_date')->nullable();
             $table->decimal('estimated_cost', 12, 2)->nullable();

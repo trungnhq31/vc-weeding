@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
+import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
 import { 
   DollarSign, 
   Plus, 
@@ -14,8 +15,13 @@ import {
   Sparkles,
   Bot,
   Layers,
-  Heart
+  Heart,
+  Download
 } from 'lucide-vue-next';
+
+const formatVND = (num: number) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num || 0);
+};
 
 const maxBudget = ref(250000000); // 250 Trăm triệu
 const budgetItems = ref([
@@ -45,6 +51,7 @@ const autoAllocateBudget = () => {
 </script>
 
 <template>
+  <WorkspaceLayout title="Ngân sách thu chi" active-nav="budget">
     <main class="max-w-7xl mx-auto px-6 py-8">
       <!-- Top Alert Banner if Overrun -->
       <div v-if="isOverrun" class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center justify-between shadow-2xs">
@@ -94,9 +101,18 @@ const autoAllocateBudget = () => {
             <h2 class="text-base font-bold text-slate-900">Danh Mục Chi Phí & Dòng Tiền</h2>
             <p class="text-xs text-slate-500">Quản lý theo dõi hạn cọc và hóa đơn nhà cung cấp</p>
           </div>
-          <button class="px-4 py-2 rounded-xl bg-slate-900 text-white font-medium text-xs hover:bg-slate-800 transition flex items-center gap-1.5">
-            <Plus class="w-4 h-4" /> Thêm Khoản Chi
-          </button>
+          <div class="flex items-center gap-2">
+            <a 
+              href="/wedding/budget/export" 
+              target="_blank"
+              class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-medium text-xs hover:bg-slate-50 transition flex items-center gap-1.5 shadow-2xs"
+            >
+              <Download class="w-4 h-4 text-slate-500" /> Xuất CSV
+            </a>
+            <button class="px-4 py-2 rounded-xl bg-slate-900 text-white font-medium text-xs hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+              <Plus class="w-4 h-4" /> Thêm Khoản Chi
+            </button>
+          </div>
         </div>
 
         <table class="w-full text-left text-xs border-collapse">

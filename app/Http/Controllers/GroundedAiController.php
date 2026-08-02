@@ -36,8 +36,9 @@ class GroundedAiController extends Controller
     {
         $workspaceId = $this->getActiveWorkspaceId($request);
         $queryInput = (string) ($request->input('query') ?? $request->input('intent') ?? 'overview');
+        $chatHistory = (array) ($request->input('history') ?? []);
 
-        $result = $this->queryGroundedAiAction->execute($workspaceId, $queryInput);
+        $result = $this->queryGroundedAiAction->execute($workspaceId, $queryInput, $chatHistory);
 
         return response()->json([
             'success' => true,

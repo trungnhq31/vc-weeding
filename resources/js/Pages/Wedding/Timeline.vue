@@ -19,9 +19,26 @@ import {
 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
+import AiPersonalizeModal from '@/Components/Wedding/AiPersonalizeModal.vue';
 
 const isAiDrawerOpen = ref(false);
+const showAiPersonalizeModal = ref(false);
 
+const handleAiApplied = (data: any) => {
+    if (data.milestones) {
+        props.milestones.splice(0, props.milestones.length, ...data.milestones);
+    }
+    if (data.workspace && props.workspace) {
+        Object.assign(props.workspace, data.workspace);
+    }
+};
+
+
+interface Subtask {
+    id: string;
+    title: string;
+    is_completed: boolean;
+}
 
 interface Task {
     id: string;
@@ -33,6 +50,7 @@ interface Task {
     due_date?: string;
     estimated_cost?: number;
     actual_cost?: number;
+    subtasks?: Subtask[];
 }
 
 interface Milestone {
@@ -81,6 +99,43 @@ const uploadingTaskId = ref<string | null>(null);
 
 // Active modal preview for images
 const previewImageUrl = ref<string | null>(null);
+
+// Collapsible milestone state (Default COLLAPSED for all milestones)
+const expandedMilestoneIds = ref<Set<string>>(new Set());
+
+const toggleMilestoneExpand = (id: string, e?: Event) => {
+    if (e) e.stopPropagation();
+    const next = new Set(expandedMilestoneIds.value);
+    if (next.has(id)) {
+        next.delete(id);
+    } else {
+        next.add(id);
+    }
+    expandedMilestoneIds.value = next;
+};
+
+// Subtask management
+const activeSubtaskInputTaskId = ref<string | null>(null);
+const newSubtaskTitleMap = ref<Record<string, string>>({});
+
+const toggleSubtask = (task: Task, subtask: Subtask, e?: Event) => {
+    if (e) e.stopPropagation();
+    subtask.is_completed = !subtask.is_completed;
+};
+
+const handleAddSubtask = (task: Task, e?: Event) => {
+    if (e) e.stopPropagation();
+    const title = newSubtaskTitleMap.value[task.id]?.trim();
+    if (!title) return;
+    if (!task.subtasks) task.subtasks = [];
+    task.subtasks.push({
+        id: `sub-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        title,
+        is_completed: false
+    });
+    newSubtaskTitleMap.value[task.id] = '';
+    activeSubtaskInputTaskId.value = null;
+};
 
 const openMilestoneModal = (milestone: Milestone) => {
     selectedMilestone.value = milestone;
@@ -201,12 +256,27 @@ const deleteTaskImage = async (task: Task, url: string) => {
 };
 
 import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
+import { computed } from 'vue';
 
+const viewMode = ref<'milestones' | 'kanban'>('milestones');
 const showAddTaskModal = ref(false);
 const newTaskTitle = ref('');
 const selectedMilestoneForAdd = ref<Milestone | null>(null);
 const newTaskEstimatedCost = ref<number | null>(null);
 const selectedCategoryFilter = ref('all');
+
+const allTasksWithMilestone = computed(() => {
+    const list: Array<{ task: Task; milestone: Milestone }> = [];
+    props.milestones.forEach(m => {
+        m.tasks.forEach(t => {
+            list.push({ task: t, milestone: m });
+        });
+    });
+    return list;
+});
+
+const pendingTasksList = computed(() => allTasksWithMilestone.value.filter(item => !item.task.is_completed));
+const completedTasksList = computed(() => allTasksWithMilestone.value.filter(item => item.task.is_completed));
 
 const handleAddTask = () => {
     if (!newTaskTitle.value || !selectedMilestoneForAdd.value) return;
@@ -227,66 +297,90 @@ const handleAddTask = () => {
 
 <template>
     <WorkspaceLayout title="Lộ Trình & Task Cưới" active-nav="timeline">
-        <!-- Bright Pastel & Glassmorphism Countdown Banner -->
-        <div class="max-w-6xl mx-auto px-6 pt-8 pb-8 space-y-10">
-            <div class="p-8 rounded-3xl bg-gradient-to-r from-rose-100/90 via-amber-50/80 to-pink-100/90 text-rose-950 shadow-lg shadow-rose-900/5 backdrop-blur-md flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-white/80">
-                <div class="space-y-2">
-                    <span class="px-3.5 py-1 rounded-full bg-rose-200/60 text-rose-900 text-[11px] font-bold uppercase tracking-widest border border-rose-300/50">
-                        ELORIA WEDDING OS • WORKSPACE DISCOVERY
-                    </span>
-                    <h2 class="text-2xl md:text-3xl font-serif font-bold text-rose-950 tracking-tight leading-snug">
-                        {{ workspace?.groom_name && workspace?.bride_name ? `Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : (workspace?.name || 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân') }}
+        <!-- Sleek Minimalist Linear Header -->
+        <div class="max-w-6xl mx-auto px-6 pt-8 pb-6 space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-200/80">
+                <div class="space-y-1">
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-slate-900 tracking-tight">
+                        Lộ Trình & Tiến Độ Cưới
                     </h2>
-                    <p class="text-xs md:text-sm text-rose-900/90 leading-relaxed font-medium">
-                        Ngày cưới: <strong class="text-rose-950 font-bold">{{ workspace?.wedding_date || '2026-10-24' }}</strong> • 
-                        Địa điểm: <strong class="text-rose-950 font-bold">{{ workspace?.wedding_location || 'TP. Hồ Chí Minh' }}</strong> • 
-                        Sảnh tiệc: <strong class="text-rose-950 font-bold">{{ workspace?.venue_name || 'Chưa chọn (Đang khảo sát)' }}</strong> • 
-                        Quy mô: ~<strong class="text-rose-950 font-bold">{{ workspace?.estimated_guests || 200 }} khách</strong>
+                    <p class="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-slate-800">{{ workspace?.groom_name }} & {{ workspace?.bride_name }}</span>
+                        <span class="text-slate-300">·</span>
+                        <span>📅 {{ workspace?.wedding_date || '2026-10-24' }}</span>
+                        <span class="text-slate-300">·</span>
+                        <span>📍 {{ workspace?.wedding_location || 'TP. Hồ Chí Minh' }}</span>
+                        <span class="text-slate-300">·</span>
+                        <span>👥 ~{{ workspace?.estimated_guests || 200 }} khách</span>
                     </p>
                 </div>
 
-                <div class="flex items-center gap-4 shrink-0">
-                    <button @click="showAddTaskModal = true; selectedMilestoneForAdd = milestones[0] || null" class="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer">
-                        <Plus class="w-4 h-4" /> Thêm Công Việc Mới
+                <div class="flex items-center gap-3 shrink-0 flex-wrap">
+                    <!-- View Mode Toggle -->
+                    <div class="p-1 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-1 shadow-2xs">
+                        <button 
+                            @click="viewMode = 'milestones'"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
+                            :class="viewMode === 'milestones' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            Milestones
+                        </button>
+                        <button 
+                            @click="viewMode = 'kanban'"
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
+                            :class="viewMode === 'kanban' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            Kanban Board
+                        </button>
+                    </div>
+
+                    <button 
+                        @click="showAiPersonalizeModal = true" 
+                        class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 hover:from-rose-800 hover:to-slate-800 text-white text-xs font-bold shadow-md transition flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
+                    >
+                        <Sparkles class="w-4 h-4 text-rose-300 animate-pulse" /> AI Cá Nhân Hóa Kế Hoạch
+                    </button>
+
+                    <button @click="showAddTaskModal = true; selectedMilestoneForAdd = milestones[0] || null" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                        <Plus class="w-4 h-4 text-rose-400" /> Thêm Công Việc
                     </button>
                 </div>
             </div>
 
-            <!-- Glassmorphism Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Minimalist Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Overall Progress -->
-                <div class="p-7 rounded-2xl bg-white/80 backdrop-blur-md border border-rose-100 shadow-md shadow-rose-900/5 hover:shadow-lg transition-all space-y-3">
+                <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tiến độ tổng thể</span>
-                        <span class="text-2xl font-extrabold text-slate-900">{{ stats.overallProgress }}%</span>
+                        <span class="text-xl font-bold text-slate-900">{{ stats.overallProgress }}%</span>
                     </div>
-                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div class="bg-rose-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${stats.overallProgress}%` }"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-500" :style="{ width: `${stats.overallProgress}%` }"></div>
                     </div>
-                    <div class="text-xs text-slate-500 leading-normal">
-                        Hoàn thành {{ stats.completedTasks }}/{{ stats.totalTasks }} mục công việc
+                    <div class="text-[11px] text-slate-400">
+                        Hoàn thành {{ stats.completedTasks }}/{{ stats.totalTasks }} công việc
                     </div>
                 </div>
 
                 <!-- Budget Allocated -->
-                <div class="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-2">
+                <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Ngân sách trần</span>
-                    <div class="text-2xl font-extrabold text-slate-900">{{ formatCurrency(stats.totalBudgetAllocated) }}</div>
-                    <div class="text-xs text-slate-500 leading-normal">Trọn gói tiệc & gia tiên</div>
+                    <div class="text-xl font-bold text-slate-900">{{ formatCurrency(stats.totalBudgetAllocated) }}</div>
                 </div>
 
                 <!-- Budget Spent -->
-                <div class="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-2">
+                <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-1">
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Chi phí đã dùng</span>
-                    <div class="text-2xl font-extrabold text-emerald-700">{{ formatCurrency(stats.totalBudgetSpent) }}</div>
-                    <div class="text-xs text-slate-500 leading-normal">Đã chốt cọc nhà hàng & pre-wedding</div>
+                    <div class="text-xl font-bold text-emerald-700">{{ formatCurrency(stats.totalBudgetSpent) }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Minimalist Timeline Stream -->
+        <!-- Main Content Area: Milestones Stream or Kanban Board -->
         <main class="max-w-6xl mx-auto px-6 pb-20">
-            <div class="relative border-l-2 border-rose-200/80 ml-3 md:ml-36 space-y-12">
+            <!-- Mode 1: Milestones Timeline Stream -->
+            <div v-if="viewMode === 'milestones'" class="relative border-l-2 border-rose-200/80 ml-3 md:ml-36 space-y-12">
                 <div 
                     v-for="milestone in milestones" 
                     :key="milestone.id" 
@@ -294,8 +388,8 @@ const handleAddTask = () => {
                     class="relative pl-6 md:pl-10 group cursor-pointer"
                 >
                     <!-- Timeframe Badge (Left side on desktop) -->
-                    <div class="hidden md:flex absolute -left-40 top-4 text-right w-32 justify-end">
-                        <span class="px-3 py-1 rounded-full bg-rose-100/70 text-rose-950 font-bold text-xs border border-rose-200/60 shadow-xs">
+                    <div class="hidden md:flex absolute -left-44 top-4 text-right w-36 justify-end">
+                        <span class="px-3.5 py-1 rounded-full bg-rose-100/80 text-rose-950 font-bold text-xs border border-rose-200/60 shadow-xs whitespace-nowrap inline-block">
                             {{ milestone.timeframe }}
                         </span>
                     </div>
@@ -314,14 +408,11 @@ const handleAddTask = () => {
                     </div>
 
                     <!-- Stitch Glassmorphic Card -->
-                    <div class="p-7 rounded-3xl bg-white/90 backdrop-blur-xl border border-rose-100/90 shadow-lg shadow-rose-900/5 group-hover:border-rose-300 group-hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
-                        <div class="flex items-center justify-between gap-4 mb-3">
-                            <div class="flex items-center gap-3">
-                                <span class="md:hidden text-xs font-bold text-rose-900 px-2.5 py-0.5 rounded-full bg-rose-100/70 border border-rose-200">
-                                    {{ milestone.timeframe }}
-                                </span>
+                    <div class="p-6 md:p-7 rounded-3xl bg-white/90 backdrop-blur-md border border-rose-100/90 shadow-md shadow-rose-900/5 group-hover:shadow-xl group-hover:border-rose-200 transition-all duration-300 space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 flex-wrap">
                                 <span 
-                                    class="text-xs font-bold px-3 py-1 rounded-full border shadow-2xs"
+                                    class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-2xs"
                                     :class="{
                                         'bg-emerald-100/80 text-emerald-900 border-emerald-200': milestone.status === 'completed',
                                         'bg-rose-100/80 text-rose-900 border-rose-200': milestone.status === 'in_progress',
@@ -331,59 +422,208 @@ const handleAddTask = () => {
                                     {{ milestone.status === 'completed' ? '✨ Hoàn thành' : (milestone.status === 'in_progress' ? '🔥 Đang thực hiện' : '⏳ Chờ chuẩn bị') }}
                                 </span>
                             </div>
-                            <span class="text-xs font-semibold text-rose-700 group-hover:text-rose-900 flex items-center gap-1 transition-colors">
-                                Chi tiết & Lưu trữ ảnh <ChevronRight class="w-4 h-4" />
-                            </span>
+
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click.stop="openMilestoneModal(milestone)"
+                                    class="text-xs font-semibold text-rose-700 hover:text-rose-900 hidden sm:flex items-center gap-1 transition-colors pr-2"
+                                >
+                                    Chi tiết <ChevronRight class="w-3.5 h-3.5" />
+                                </button>
+
+                                <button 
+                                    @click.stop="toggleMilestoneExpand(milestone.id)" 
+                                    class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 shadow-2xs"
+                                >
+                                    <span>{{ expandedMilestoneIds.has(milestone.id) ? 'Thu gọn' : `Công việc (${milestone.tasks?.length || 0})` }}</span>
+                                    <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': expandedMilestoneIds.has(milestone.id) }" />
+                                </button>
+                            </div>
                         </div>
 
-                        <h3 class="text-lg font-serif font-bold text-slate-900 group-hover:text-rose-700 transition-colors mb-2">
-                            {{ milestone.title }}
-                        </h3>
+                        <div @click.stop="toggleMilestoneExpand(milestone.id)" class="cursor-pointer space-y-1">
+                            <h3 class="text-lg font-serif font-bold text-slate-900 group-hover:text-rose-700 transition-colors">
+                                {{ milestone.title }}
+                            </h3>
 
-                        <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-4">
-                            {{ milestone.summary }}
-                        </p>
+                            <p class="text-slate-600 text-xs md:text-sm leading-relaxed">
+                                {{ milestone.summary }}
+                            </p>
+                        </div>
 
-                        <!-- Expanded Task Checklist directly inside card -->
-                        <div v-if="milestone.tasks && milestone.tasks.length > 0" class="mt-4 pt-3 border-t border-rose-100/80 space-y-2" @click.stop>
+                        <!-- Expanded Task & Subtask Checklist (Collapsible) -->
+                        <div v-if="expandedMilestoneIds.has(milestone.id)" class="mt-4 pt-4 border-t border-rose-100/80 space-y-3" @click.stop>
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">DANH SÁCH CÔNG VIỆC ({{ milestone.tasks.filter(t => t.is_completed).length }}/{{ milestone.tasks.length }})</span>
-                                <span class="text-[11px] font-bold text-rose-700">Click để hoàn thành</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    DANH SÁCH CÔNG VIỆC ({{ milestone.tasks?.filter(t => t.is_completed).length || 0 }}/{{ milestone.tasks?.length || 0 }})
+                                </span>
                             </div>
-                            <div 
-                                v-for="task in milestone.tasks" 
-                                :key="task.id" 
-                                @click="toggleTask(task)" 
-                                class="p-2.5 rounded-xl border transition flex items-center justify-between gap-3 text-xs cursor-pointer shadow-2xs"
-                                :class="task.is_completed ? 'border-emerald-200 bg-emerald-50/50 text-slate-400 line-through' : 'border-rose-100 bg-white hover:bg-rose-50/40 text-slate-800'"
-                            >
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <div 
-                                        class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition"
-                                        :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'"
-                                    >
-                                        <Check v-if="task.is_completed" class="w-3 h-3 stroke-[3]" />
+                            
+                            <div v-if="milestone.tasks && milestone.tasks.length > 0" class="space-y-3">
+                                <div 
+                                    v-for="task in milestone.tasks" 
+                                    :key="task.id" 
+                                    class="p-3 rounded-2xl border transition space-y-2 bg-white shadow-2xs"
+                                    :class="task.is_completed ? 'border-emerald-200 bg-emerald-50/30' : 'border-rose-100 hover:border-rose-200'"
+                                >
+                                    <!-- Main Task Row -->
+                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                        <div @click="toggleTask(task)" class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer">
+                                            <div 
+                                                class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition"
+                                                :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'"
+                                            >
+                                                <Check v-if="task.is_completed" class="w-3 h-3 stroke-[3]" />
+                                            </div>
+                                            <span class="font-semibold leading-normal break-words" :class="task.is_completed ? 'text-slate-400 line-through' : 'text-slate-900'">
+                                                {{ task.title }}
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                                {{ formatCurrency(task.estimated_cost) }}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span class="font-medium truncate">{{ task.title }}</span>
+
+                                    <!-- Subtasks List (Nội dung từng task có subtask) -->
+                                    <div v-if="task.subtasks && task.subtasks.length > 0" class="pl-6 space-y-1.5 border-l-2 border-slate-200/80 ml-2 my-1">
+                                        <div 
+                                            v-for="sub in task.subtasks" 
+                                            :key="sub.id" 
+                                            @click.stop="toggleSubtask(task, sub)"
+                                            class="flex items-center justify-between text-xs py-1 px-2.5 rounded-lg hover:bg-slate-100/80 cursor-pointer group/sub transition"
+                                            :class="sub.is_completed ? 'line-through text-slate-400' : 'text-slate-700'"
+                                        >
+                                            <div class="flex items-center gap-2">
+                                                <div 
+                                                    class="w-3.5 h-3.5 rounded border flex items-center justify-center transition shrink-0" 
+                                                    :class="sub.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'"
+                                                >
+                                                    <Check v-if="sub.is_completed" class="w-2.5 h-2.5 stroke-[3]" />
+                                                </div>
+                                                <span class="font-medium">{{ sub.title }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Inline Subtask Creator -->
+                                    <div class="pl-6 pt-1 flex items-center gap-2 text-xs" @click.stop>
+                                        <button 
+                                            v-if="activeSubtaskInputTaskId !== task.id" 
+                                            @click="activeSubtaskInputTaskId = task.id"
+                                            class="text-[11px] font-semibold text-rose-700 hover:text-rose-900 flex items-center gap-1 py-0.5 px-2 rounded-md hover:bg-rose-50 transition cursor-pointer"
+                                        >
+                                            <Plus class="w-3 h-3" /> Thêm công việc phụ (subtask)
+                                        </button>
+
+                                        <div v-else class="flex items-center gap-2 flex-1 max-w-md pt-1">
+                                            <input 
+                                                v-model="newSubtaskTitleMap[task.id]" 
+                                                @keyup.enter="handleAddSubtask(task)"
+                                                placeholder="Nhập tên subtask & bấm Enter..." 
+                                                class="px-3 py-1.5 text-xs rounded-xl border border-rose-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 flex-1 shadow-2xs"
+                                                autoFocus
+                                            />
+                                            <button @click="handleAddSubtask(task)" class="px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl cursor-pointer shadow-2xs">Lưu</button>
+                                            <button @click="activeSubtaskInputTaskId = null" class="p-1.5 text-slate-400 hover:text-slate-600"><X class="w-4 h-4" /></button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
-                                    {{ formatCurrency(task.estimated_cost) }}
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar & Budget (Always visible summary bar) -->
+                        <div class="mt-4 pt-4 border-t border-rose-100/80 flex items-center justify-between text-xs text-slate-600 gap-3">
+                            <div class="flex items-center gap-3 flex-1 max-w-[240px]">
+                                <div class="flex-1 bg-rose-100/60 rounded-full h-2 overflow-hidden border border-rose-200/40">
+                                    <div class="bg-gradient-to-r from-rose-500 to-pink-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${milestone.progress_percentage || 0}%` }"></div>
+                                </div>
+                                <span class="font-bold text-rose-950 text-xs shrink-0 whitespace-nowrap">{{ Math.round(milestone.progress_percentage || 0) }}%</span>
+                            </div>
+
+                            <div class="text-xs font-medium bg-rose-50/80 px-3 py-1 rounded-xl border border-rose-100 text-rose-900 shrink-0 whitespace-nowrap">
+                                Ngân sách: <span class="font-bold text-rose-950">{{ formatCurrency(Number(milestone.budget_allocated)) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode 2: Kanban Board View -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Column 1: Tasks Cần Làm -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-3xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                            <h3 class="font-serif font-bold text-slate-900 text-base">Cần Làm / Đang Thực Hiện</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">{{ pendingTasksList.length }} task</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div v-if="pendingTasksList.length === 0" class="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-dashed border-slate-200">
+                            Không có công việc nào đang chờ.
+                        </div>
+
+                        <div 
+                            v-for="item in pendingTasksList" 
+                            :key="item.task.id"
+                            @click="toggleTask(item.task)"
+                            class="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs hover:border-rose-300 hover:shadow-xs transition cursor-pointer space-y-2 group"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100 uppercase tracking-widest truncate max-w-[200px]">
+                                    {{ item.milestone.title }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-mono">{{ item.milestone.timeframe }}</span>
+                            </div>
+
+                            <h4 class="text-xs font-bold text-slate-900 group-hover:text-rose-700 transition">{{ item.task.title }}</h4>
+
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+                                <span class="text-slate-500">{{ item.task.notes || 'Chưa có ghi chú' }}</span>
+                                <span v-if="item.task.estimated_cost" class="font-bold text-rose-950">
+                                    {{ formatCurrency(item.task.estimated_cost) }}
                                 </span>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Progress Bar & Budget -->
-                        <div class="mt-4 pt-4 border-t border-rose-100/80 flex items-center justify-between text-xs text-slate-600">
-                            <div class="flex items-center gap-3 flex-1 max-w-[220px]">
-                                <div class="flex-1 bg-rose-100/60 rounded-full h-2 overflow-hidden border border-rose-200/40">
-                                    <div class="bg-gradient-to-r from-rose-500 to-pink-500 h-2 rounded-full transition-all duration-500" :style="{ width: `${milestone.progress_percentage}%` }"></div>
-                                </div>
-                                <span class="font-bold text-rose-950 text-xs">{{ milestone.progress_percentage }}%</span>
+                <!-- Column 2: Tasks Đã Hoàn Thành -->
+                <div class="bg-emerald-50/50 border border-emerald-200/80 rounded-3xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-emerald-200 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                            <h3 class="font-serif font-bold text-slate-900 text-base">Đã Hoàn Thành</h3>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">{{ completedTasksList.length }} task</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div v-if="completedTasksList.length === 0" class="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-dashed border-slate-200">
+                            Chưa có công việc nào hoàn thành.
+                        </div>
+
+                        <div 
+                            v-for="item in completedTasksList" 
+                            :key="item.task.id"
+                            @click="toggleTask(item.task)"
+                            class="p-4 bg-white rounded-2xl border border-emerald-200/80 shadow-2xs transition cursor-pointer space-y-2 opacity-85 hover:opacity-100"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 uppercase tracking-widest truncate max-w-[200px]">
+                                    {{ item.milestone.title }}
+                                </span>
+                                <span class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                    <Check class="w-3 h-3" /> Hoàn tất
+                                </span>
                             </div>
 
-                            <div class="text-xs font-medium bg-rose-50/80 px-3 py-1 rounded-xl border border-rose-100 text-rose-900">
-                                Ngân sách: <span class="font-bold text-rose-950">{{ formatCurrency(Number(milestone.budget_allocated)) }}</span>
-                            </div>
+                            <h4 class="text-xs font-bold text-slate-700 line-through">{{ item.task.title }}</h4>
                         </div>
                     </div>
                 </div>
@@ -593,6 +833,13 @@ const handleAddTask = () => {
                 </div>
             </div>
         </div>
+
+        <!-- AI Personalization Modal -->
+        <AiPersonalizeModal 
+            :is-open="showAiPersonalizeModal" 
+            @close="showAiPersonalizeModal = false" 
+            @applied="handleAiApplied" 
+        />
 
         <!-- Grounded AI Drawer -->
         <GroundedAiDrawer :is-open="isAiDrawerOpen" @close="isAiDrawerOpen = false" />

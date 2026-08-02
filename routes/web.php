@@ -7,9 +7,11 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\GroundedAiController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PlannerDashboardController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\RsvpController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WeddingController;
 use App\Http\Controllers\WeddingTimelineController;
@@ -26,6 +28,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding.index');
 Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
 
+// Master List / Catalog of Online Invitations & Sub-routes
+Route::get('/invitations', [PortfolioController::class, 'index'])->name('invitations.index');
+Route::get('/invitations/{template_slug}', [WeddingController::class, 'index'])->name('invitations.show');
+Route::get('/invitations/{template_slug}/guest/{guest_slug}', [WeddingController::class, 'invitation'])->name('invitations.guest');
+
 // Subpath & Subdomain Wedding Routes (Supports both localhost:8085 and custom subdomains)
 $weddingRoutes = function () {
     Route::get('/', [WeddingController::class, 'index'])->name('wedding.index');
@@ -40,13 +47,19 @@ $weddingRoutes = function () {
     Route::post('/vendors', [VendorController::class, 'store'])->name('wedding.vendors.store');
     Route::post('/vendors/{vendor}/payment', [VendorController::class, 'recordPayment'])->name('wedding.vendors.payment');
     Route::post('/ai-query', [GroundedAiController::class, 'query'])->name('wedding.ai.query');
+    Route::post('/ai-personalize-timeline', [WeddingTimelineController::class, 'aiPersonalizeTimeline'])->name('wedding.ai.personalize');
 
     // Planning Modules
     Route::get('/budget', [WeddingController::class, 'budget'])->name('wedding.budget');
+    Route::get('/budget/export', [WeddingController::class, 'exportBudget'])->name('wedding.budget.export');
     Route::get('/guests', [WeddingController::class, 'guests'])->name('wedding.guests');
+    Route::get('/guests/export', [WeddingController::class, 'exportGuests'])->name('wedding.guests.export');
     Route::get('/documents', [WeddingController::class, 'documents'])->name('wedding.documents');
     Route::get('/invitation-editor', [WeddingController::class, 'invitationEditor'])->name('wedding.invitation_editor');
+    Route::post('/invitation-editor/save', [WeddingController::class, 'saveInvitationCms'])->name('wedding.invitation_editor.save');
     Route::get('/settings', [WeddingController::class, 'settings'])->name('wedding.settings');
+    Route::get('/planner-dashboard', [PlannerDashboardController::class, 'index'])->name('wedding.planner_dashboard');
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('wedding.subscription.upgrade');
 
     Route::get('/invitation/{guest_slug}', [WeddingController::class, 'invitation'])->name('wedding.invitation');
     Route::post('/rsvp', [RsvpController::class, 'store'])->name('wedding.rsvp.store');
@@ -71,5 +84,3 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 // Dynamic SEO Engine Routes
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemapXml'])->name('sitemap.xml');
 Route::get('/robots.txt', [SitemapController::class, 'robotsTxt'])->name('robots.txt');
-
-

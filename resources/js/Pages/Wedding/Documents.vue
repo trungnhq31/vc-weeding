@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
+import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
 import { 
   FileText, 
   Upload, 
@@ -94,8 +95,7 @@ const formatCurrency = (val: number) => {
 </script>
 
 <template>
-    </header>
-
+  <WorkspaceLayout>
     <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-6 py-8">
       <!-- Section Header -->
@@ -215,7 +215,6 @@ const formatCurrency = (val: number) => {
         <div class="mt-6 flex justify-end gap-3">
           <button @click="showUploadModal = false" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer">Hủy</button>
           <button @click="addDocument" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-md cursor-pointer">Lưu Hợp Đồng</button>
-        </div>
         </div>
       </div>
     </div>

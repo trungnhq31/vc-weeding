@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Guest;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use App\Models\WeddingMemory;
 use App\Models\Wish;
 use App\Modules\Budget\Models\BudgetItem;
@@ -20,43 +21,108 @@ use App\Modules\Task\Models\Task;
 use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceMember;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 0. Seed Invitation Templates Catalog
+        // -1. Seed Demo Login Accounts
+        User::updateOrCreate(
+            ['email' => 'groom@eloria.vn'],
+            ['name' => 'Chú Rể Quốc Trung', 'password' => Hash::make('password')]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'bride@eloria.vn'],
+            ['name' => 'Cô Dâu Hồng Vân', 'password' => Hash::make('password')]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'admin@eloria.vn'],
+            ['name' => 'Eloria Admin', 'password' => Hash::make('password')]
+        );
+
+        // 0. Seed Invitation Templates Catalog (10 Curated Premium Templates)
         $templates = [
             [
                 'id' => 'romantic-pastel',
-                'name' => 'Romantic Pastel',
-                'description' => 'Phong cách Hồng & Kem lãng mạn nhẹ nhàng với hiệu ứng mở sáp Wax Seal.',
+                'name' => '1. Romantic Pastel & Wax Seal',
+                'description' => 'Bố cục Hồng Phấn & Kem ấm áp mở dấu sáp nến Wax Seal lãng mạn.',
                 'thumbnail_url' => '/images/templates/pastel-thumb.png',
-                'vue_component' => 'Templates/Pastel.vue',
+                'vue_component' => 'Templates/PastelTemplate.vue',
                 'is_premium' => false,
             ],
             [
                 'id' => 'royal-gold',
-                'name' => 'Royal Champagne & Gold',
-                'description' => 'Phong cách Vàng Champagne & Trắng ngà sang trọng với font Playfair Display.',
+                'name' => '2. Royal Gold & Monogram Crest',
+                'description' => 'Khung viền vàng dát lá & Biểu tượng Monogram Crest T&V hoàng gia quý phái.',
                 'thumbnail_url' => '/images/templates/royal-thumb.png',
-                'vue_component' => 'Templates/RoyalGold.vue',
+                'vue_component' => 'Templates/RoyalGoldTemplate.vue',
                 'is_premium' => true,
             ],
             [
                 'id' => 'modern-slate',
-                'name' => 'Modern Minimalist Slate',
-                'description' => 'Phong cách Tối giản hiện đại màu Slate/Indigo dành cho cặp đôi trẻ.',
+                'name' => '3. Modern Editorial Magazine',
+                'description' => 'Bố cục tạp chí thời trang asymmetric 2 cột thanh lịch có thanh điều hướng sticky.',
                 'thumbnail_url' => '/images/templates/slate-thumb.png',
-                'vue_component' => 'Templates/ModernSlate.vue',
+                'vue_component' => 'Templates/ModernSlateTemplate.vue',
                 'is_premium' => false,
             ],
             [
                 'id' => 'botanical-sage',
-                'name' => 'Vintage Botanical Garden',
-                'description' => 'Phong cách hoa lá thiên nhiên màu Xanh Sage tươi mát cho tiệc cưới ngoài trời.',
+                'name' => '4. Botanical Garden & Arch Cards',
+                'description' => 'Khung ảnh vòm mềm mại & họa tiết dây lá tươi mát cho tiệc cưới ngoài trời.',
                 'thumbnail_url' => '/images/templates/botanical-thumb.png',
-                'vue_component' => 'Templates/BotanicalSage.vue',
+                'vue_component' => 'Templates/BotanicalSageTemplate.vue',
+                'is_premium' => true,
+            ],
+            [
+                'id' => 'indochine-traditional',
+                'name' => '5. Indochine Red Velvet & Song Hỷ',
+                'description' => 'Họa tiết lưới gỗ Đông Dương & Biểu tượng Song Hỷ (囍) dát vàng trên nền đỏ nhung.',
+                'thumbnail_url' => '/images/templates/indochine-thumb.png',
+                'vue_component' => 'Templates/IndochineTemplate.vue',
+                'is_premium' => true,
+            ],
+            [
+                'id' => 'celestial-blue',
+                'name' => '6. Ocean Breeze Boarding Pass Ticket',
+                'description' => 'Vé máy bay chuyến bay tình yêu xé góc kèm mã QR check-in sân bay.',
+                'thumbnail_url' => '/images/templates/blue-thumb.png',
+                'vue_component' => 'Templates/BoardingPassTemplate.vue',
+                'is_premium' => false,
+            ],
+            [
+                'id' => 'emerald-luxe',
+                'name' => '7. Imperial Emerald Glass Ring',
+                'description' => 'Nền xanh ngọc bảo hoàng gia kết hợp thẻ kính mờ & vòng đếm ngược kim tuyến.',
+                'thumbnail_url' => '/images/templates/emerald-thumb.png',
+                'vue_component' => 'Templates/EmeraldLuxeTemplate.vue',
+                'is_premium' => true,
+            ],
+            [
+                'id' => 'sunset-coral',
+                'name' => '8. Tropical Sunset 50/50 Split View',
+                'description' => 'Bố cục chia đôi màn hình 50/50 màu hồng cam san hô tràn đầy năng lượng.',
+                'thumbnail_url' => '/images/templates/coral-thumb.png',
+                'vue_component' => 'Templates/SunsetCoralTemplate.vue',
+                'is_premium' => false,
+            ],
+            [
+                'id' => 'crimson-velvet',
+                'name' => '9. The Wedding Gazette Newspaper',
+                'description' => 'Báo in tin tức tiệc cưới cổ điển 3 cột "EXTRA EXTRA! JUST MARRIED".',
+                'thumbnail_url' => '/images/templates/crimson-thumb.png',
+                'vue_component' => 'Templates/GazetteNewspaperTemplate.vue',
+                'is_premium' => true,
+            ],
+            [
+                'id' => 'vintage-sepia',
+                'name' => '10. Storybook Fairytale Journal',
+                'description' => 'Cuốn sách câu chuyện tình yêu với các thẻ phân chương (Chương I - IV) hoài niệm.',
+                'thumbnail_url' => '/images/templates/sepia-thumb.png',
+                'vue_component' => 'Templates/StorybookJournalTemplate.vue',
                 'is_premium' => true,
             ],
         ];
@@ -66,41 +132,52 @@ class DatabaseSeeder extends Seeder
         }
 
         // 0.1 Seed Default Wedding Workspace
-        $workspace = Workspace::create([
-            'name' => 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân',
-            'slug' => 'quoc-trung-hong-van',
-            'groom_name' => 'Nguyễn Hoàng Quốc Trung',
-            'bride_name' => 'Lê Thị Hồng Vân',
-            'wedding_date' => '2026-10-24',
-            'wedding_location' => 'TP. Hồ Chí Minh',
-            'venue_name' => null,
-            'estimated_guests' => 200,
-            'wedding_hashtag' => '#TrungVanWedding2026',
-            'couple_story' => 'Hành trình 6 năm tình yêu từ mái trường đại học đến ngày chung đôi hạnh phúc.',
-            'budget_cap' => 350000000.00,
-            'currency' => 'VND',
-        ]);
+        $workspace = Workspace::firstOrCreate(
+            ['slug' => 'quoc-trung-hong-van'],
+            [
+                'name' => 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân',
+                'groom_name' => 'Nguyễn Hoàng Quốc Trung',
+                'bride_name' => 'Lê Thị Hồng Vân',
+                'wedding_date' => '2026-10-24',
+                'wedding_location' => 'TP. Hồ Chí Minh',
+                'venue_name' => 'Trung Tâm Hội Nghị Asiana Plaza',
+                'estimated_guests' => 200,
+                'wedding_hashtag' => '#TrungVanWedding2026',
+                'couple_story' => 'Hành trình 6 năm tình yêu từ mái trường đại học đến ngày chung đôi hạnh phúc.',
+                'budget_cap' => 350000000.00,
+                'currency' => 'VND',
+            ]
+        );
 
-        WorkspaceMember::create([
-            'workspace_id' => $workspace->id,
-            'member_name' => 'Quốc Trung',
-            'role' => 'groom',
-        ]);
+        WorkspaceMember::firstOrCreate(
+            ['workspace_id' => $workspace->id, 'member_name' => 'Quốc Trung'],
+            ['role' => 'groom']
+        );
 
-        WorkspaceMember::create([
-            'workspace_id' => $workspace->id,
-            'member_name' => 'Hồng Vân',
-            'role' => 'bride',
-        ]);
+        WorkspaceMember::firstOrCreate(
+            ['workspace_id' => $workspace->id, 'member_name' => 'Hồng Vân'],
+            ['role' => 'bride']
+        );
 
-        WorkspaceInvitation::create([
-            'workspace_id' => $workspace->id,
-            'template_id' => 'romantic-pastel',
-            'custom_title' => 'Lễ Thành Hôn Quốc Trung & Hồng Vân',
-            'primary_color' => '#EC4899',
-            'enable_wax_seal' => true,
-            'enable_qr_checkin' => true,
-        ]);
+        WorkspaceInvitation::firstOrCreate(
+            ['workspace_id' => $workspace->id],
+            [
+                'template_id' => 'romantic-pastel',
+                'custom_title' => 'Lễ Thành Hôn Quốc Trung & Hồng Vân',
+                'primary_color' => '#EC4899',
+                'font_family' => 'Playfair Display',
+                'groom_parents' => 'Ông N.V. Nam & Bà T.T. Mai',
+                'bride_parents' => 'Ông L.V. Hùng & Bà P.T. Cúc',
+                'event_time' => '11:30 Sáng',
+                'google_maps_url' => 'https://maps.google.com/?q=Asiana+Plaza',
+                'bank_name' => 'Vietcombank',
+                'bank_account_number' => '1029384756',
+                'bank_account_holder' => 'NGUYEN HOANG QUOC TRUNG',
+                'enable_wax_seal' => true,
+                'enable_qr_checkin' => true,
+                'enable_gift_box' => true,
+            ]
+        );
 
         // 0.15 Seed Sample Tables
         $tableVip = Table::create([
@@ -194,41 +271,45 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 1. Seed Sample Guests with workspace_id and table_id
-        $guest = Guest::create([
-            'workspace_id' => $workspace->id,
-            'table_id' => $tableVip->id,
-            'guest_slug' => 'anh-tuan-va-chi-lan',
-            'name' => 'Anh Tuấn & Chị Lan',
-            'salutation' => 'Trân trọng kính mời Anh Tuấn & Chị Lan',
-            'group' => 'Đồng nghiệp',
-            'estimated_count' => 2,
-            'confirmed_count' => 2,
-            'dietary_preference' => 'Món mặn chuẩn set menu',
-            'shuttle_bus' => 'yes',
-            'qr_code_token' => 'QR-TUANLAN-2026',
-            'is_checked_in' => false,
-            'table_name' => 'Bàn VIP 02 (Đồng Nghiệp)',
-            'rsvp_status' => RsvpStatus::Attending,
-            'notes' => 'Sẽ đến đúng giờ dự tiệc',
-        ]);
+        $guest = Guest::firstOrCreate(
+            ['guest_slug' => 'anh-tuan-va-chi-lan'],
+            [
+                'workspace_id' => $workspace->id,
+                'table_id' => $tableVip->id,
+                'name' => 'Anh Tuấn & Chị Lan',
+                'salutation' => 'Trân trọng kính mời Anh Tuấn & Chị Lan',
+                'group' => 'Đồng nghiệp',
+                'estimated_count' => 2,
+                'confirmed_count' => 2,
+                'dietary_preference' => 'Món mặn chuẩn set menu',
+                'shuttle_bus' => 'yes',
+                'qr_code_token' => 'QR-TUANLAN-2026',
+                'is_checked_in' => false,
+                'table_name' => 'Bàn VIP 02 (Đồng Nghiệp)',
+                'rsvp_status' => RsvpStatus::Attending,
+                'notes' => 'Sẽ đến đúng giờ dự tiệc',
+            ]
+        );
 
-        Guest::create([
-            'workspace_id' => $workspace->id,
-            'table_id' => $tableFamily->id,
-            'guest_slug' => 'gia-dinh-chu-sau',
-            'name' => 'Gia đình Chú Sáu',
-            'salutation' => 'Kính mời Chú Sáu và Gia đình',
-            'group' => 'Họ hàng',
-            'estimated_count' => 4,
-            'confirmed_count' => 0,
-            'dietary_preference' => null,
-            'shuttle_bus' => 'no',
-            'qr_code_token' => 'QR-CHUSAU-2026',
-            'is_checked_in' => false,
-            'table_name' => 'Bàn 05 (Họ Hàng Nhà Chú Rể)',
-            'rsvp_status' => RsvpStatus::Pending,
-            'notes' => null,
-        ]);
+        Guest::firstOrCreate(
+            ['guest_slug' => 'gia-dinh-chu-sau'],
+            [
+                'workspace_id' => $workspace->id,
+                'table_id' => $tableFamily->id,
+                'name' => 'Gia đình Chú Sáu',
+                'salutation' => 'Kính mời Chú Sáu và Gia đình',
+                'group' => 'Họ hàng',
+                'estimated_count' => 4,
+                'confirmed_count' => 0,
+                'dietary_preference' => null,
+                'shuttle_bus' => 'no',
+                'qr_code_token' => 'QR-CHUSAU-2026',
+                'is_checked_in' => false,
+                'table_name' => 'Bàn 05 (Họ Hàng Nhà Chú Rể)',
+                'rsvp_status' => RsvpStatus::Pending,
+                'notes' => null,
+            ]
+        );
 
         // 2. Seed Sample Wishes
         Wish::create([

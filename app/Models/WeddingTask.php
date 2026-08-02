@@ -19,6 +19,7 @@ class WeddingTask extends Model
         'notes',
         'vendor_info',
         'attachments',
+        'subtasks',
         'is_completed',
         'due_date',
         'estimated_cost',
@@ -30,6 +31,7 @@ class WeddingTask extends Model
         return [
             'is_completed' => 'boolean',
             'attachments' => 'array',
+            'subtasks' => 'array',
             'due_date' => 'date',
             'estimated_cost' => 'decimal:2',
             'actual_cost' => 'decimal:2',

@@ -8,13 +8,12 @@ use App\Modules\Vendor\Actions\CreateVendorAction;
 use App\Modules\Vendor\Actions\RecordVendorPaymentAction;
 use App\Modules\Vendor\Models\Vendor;
 use App\Modules\Vendor\Services\VendorCrmService;
+use App\Modules\Vendor\Services\VendorMatchmakerService;
 use App\Modules\Workspace\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-
-use App\Modules\Vendor\Services\VendorMatchmakerService;
 
 class VendorController extends Controller
 {

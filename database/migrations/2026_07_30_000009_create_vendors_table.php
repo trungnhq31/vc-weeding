@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('vibe_category')->default('pastel'); // pastel, royal, garden, minimalist
             $table->string('city')->nullable()->default('TP. Hồ Chí Minh');
             $table->string('district')->nullable()->default('Quận 1');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->string('price_tier')->default('standard'); // budget, standard, premium, luxury
             $table->decimal('rating', 3, 1)->default(4.9);
             $table->integer('min_capacity')->default(50);

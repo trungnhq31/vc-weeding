@@ -7,15 +7,22 @@ namespace App\Http\Controllers;
 use App\Models\Guest;
 use App\Models\WeddingMemory;
 use App\Models\Wish;
+use App\Models\Workspace;
+use App\Modules\Budget\Actions\ExportBudgetAction;
+use App\Modules\Guest\Actions\ExportGuestListAction;
+use App\Modules\Invitation\Actions\UpdateInvitationCmsAction;
+use App\Modules\Invitation\Models\InvitationTemplate;
+use App\Modules\Invitation\Models\WorkspaceInvitation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WeddingController extends Controller
 {
-    public function index(): Response
+    public function index(?string $templateSlug = 'romantic-pastel'): Response
     {
         $wishes = Wish::where('is_approved', true)
             ->latest()
@@ -27,15 +34,19 @@ class WeddingController extends Controller
             ->get();
 
         return Inertia::render('Wedding/Index', [
+            'templateSlug' => $templateSlug ?? 'romantic-pastel',
             'wishes' => $wishes,
             'memories' => $memories,
             'guest' => null,
         ]);
     }
 
-    public function invitation(string $guestSlug): Response
+    public function invitation(string $templateSlugOrGuestSlug, ?string $guestSlug = null): Response
     {
-        $guest = Guest::where('guest_slug', $guestSlug)->firstOrFail();
+        $actualGuestSlug = $guestSlug ?? $templateSlugOrGuestSlug;
+        $actualTemplateSlug = $guestSlug ? $templateSlugOrGuestSlug : 'romantic-pastel';
+
+        $guest = Guest::where('guest_slug', $actualGuestSlug)->firstOrFail();
 
         $wishes = Wish::where('is_approved', true)
             ->latest()
@@ -47,6 +58,7 @@ class WeddingController extends Controller
             ->get();
 
         return Inertia::render('Wedding/Show', [
+            'templateSlug' => $actualTemplateSlug,
             'guest' => $guest,
             'wishes' => $wishes,
             'memories' => $memories,
@@ -94,7 +106,29 @@ class WeddingController extends Controller
 
     public function invitationEditor(): Response
     {
-        return Inertia::render('Wedding/InvitationEditor');
+        $workspace = Workspace::first();
+        $invitation = WorkspaceInvitation::with('template')
+            ->where('workspace_id', $workspace->id ?? null)
+            ->first();
+        $templates = InvitationTemplate::all();
+
+        return Inertia::render('Wedding/InvitationEditor', [
+            'workspace' => $workspace,
+            'invitation' => $invitation,
+            'templates' => $templates,
+        ]);
+    }
+
+    public function saveInvitationCms(Request $request, UpdateInvitationCmsAction $action): JsonResponse
+    {
+        $workspace = Workspace::first();
+        $updatedInvitation = $action->execute((string) $workspace->id, $request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã lưu thay đổi CMS thiệp cưới thành công!',
+            'invitation' => $updatedInvitation,
+        ]);
     }
 
     public function settings(): Response
@@ -106,5 +140,18 @@ class WeddingController extends Controller
     {
         return Inertia::render('Wedding/Documents');
     }
-}
 
+    public function exportGuests(ExportGuestListAction $action): StreamedResponse
+    {
+        $workspace = Workspace::first();
+
+        return $action->execute((string) ($workspace->id ?? 1));
+    }
+
+    public function exportBudget(ExportBudgetAction $action): StreamedResponse
+    {
+        $workspace = Workspace::first();
+
+        return $action->execute((string) ($workspace->id ?? 1));
+    }
+}

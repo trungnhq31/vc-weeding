@@ -22,13 +22,13 @@ class SitemapController extends Controller
                 'priority' => '1.0',
             ],
             [
-                'loc' => $baseUrl . '/portfolio',
+                'loc' => $baseUrl.'/portfolio',
                 'lastmod' => now()->toIso8601String(),
                 'changefreq' => 'weekly',
                 'priority' => '0.9',
             ],
             [
-                'loc' => $baseUrl . '/blog',
+                'loc' => $baseUrl.'/blog',
                 'lastmod' => now()->toIso8601String(),
                 'changefreq' => 'daily',
                 'priority' => '0.8',
@@ -41,7 +41,7 @@ class SitemapController extends Controller
 
         $blogUrls = $posts->map(function (Post $post) use ($baseUrl) {
             return [
-                'loc' => $baseUrl . '/blog/' . $post->slug,
+                'loc' => $baseUrl.'/blog/'.$post->slug,
                 'lastmod' => ($post->updated_at ?? $post->published_at ?? now())->toIso8601String(),
                 'changefreq' => 'weekly',
                 'priority' => '0.7',
@@ -55,10 +55,10 @@ class SitemapController extends Controller
 
         foreach ($urls as $url) {
             $xml .= '<url>';
-            $xml .= '<loc>' . htmlspecialchars($url['loc']) . '</loc>';
-            $xml .= '<lastmod>' . $url['lastmod'] . '</lastmod>';
-            $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
-            $xml .= '<priority>' . $url['priority'] . '</priority>';
+            $xml .= '<loc>'.htmlspecialchars($url['loc']).'</loc>';
+            $xml .= '<lastmod>'.$url['lastmod'].'</lastmod>';
+            $xml .= '<changefreq>'.$url['changefreq'].'</changefreq>';
+            $xml .= '<priority>'.$url['priority'].'</priority>';
             $xml .= '</url>';
         }
 
@@ -80,7 +80,7 @@ class SitemapController extends Controller
         $content .= "Allow: /blog/*\n";
         $content .= "Disallow: /wedding/\n";
         $content .= "Disallow: /admin/\n\n";
-        $content .= "Sitemap: " . $baseUrl . "/sitemap.xml\n";
+        $content .= 'Sitemap: '.$baseUrl."/sitemap.xml\n";
 
         return response($content, 200, [
             'Content-Type' => 'text/plain',
