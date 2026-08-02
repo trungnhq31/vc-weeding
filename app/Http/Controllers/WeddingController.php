@@ -16,6 +16,7 @@ use App\Modules\Invitation\Models\WorkspaceInvitation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -127,7 +128,100 @@ class WeddingController extends Controller
 
     public function guests(): Response
     {
-        return Inertia::render('Wedding/Guests');
+        $workspace = Workspace::latest()->first();
+        if (! $workspace) {
+            $workspace = Workspace::create([
+                'name' => 'Đám Cưới Quốc Trung & Hồng Vân',
+                'slug' => 'quoc-trung-hong-van-'.Str::random(5),
+                'groom_name' => 'Nguyễn Hoàng Quốc Trung',
+                'bride_name' => 'Lê Thị Hồng Vân',
+                'budget_cap' => 250000000.00,
+                'estimated_guests' => 200,
+                'wedding_date' => '2026-10-24',
+                'wedding_location' => 'TP. Hồ Chí Minh',
+            ]);
+        }
+
+        if (Guest::where('workspace_id', $workspace->id)->count() === 0) {
+            $samples = [
+                ['name' => 'Nguyễn Văn Anh', 'group' => 'Nhà Trai', 'phone' => '0901234567', 'table_name' => 'Bàn VIP 1 (Họ Hàng)', 'dietary_preference' => 'Không cay', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Chú rể'],
+                ['name' => 'Trần Thị Bích', 'group' => 'Nhà Gái', 'phone' => '0909876543', 'table_name' => 'Bàn VIP 1 (Họ Hàng)', 'dietary_preference' => 'Bình thường', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Cô dâu'],
+                ['name' => 'Lê Hoàng Nam', 'group' => 'Bạn Chú Rể', 'phone' => '0912345678', 'table_name' => 'Bàn Bạn Học 1', 'dietary_preference' => 'Ăn chay', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Bạn học'],
+                ['name' => 'Phạm Minh Tâm', 'group' => 'Đồng Nghiệp', 'phone' => '0987654321', 'table_name' => 'Bàn Công Ty', 'dietary_preference' => 'Bình thường', 'rsvp_status' => 'pending', 'notes' => 'Thêm bởi: Bạn đồng nghiệp'],
+                ['name' => 'Đặng Tuấn Kiệt', 'group' => 'Họ Hàng Dâu', 'phone' => '0933445566', 'table_name' => 'Chưa xếp', 'dietary_preference' => '-', 'rsvp_status' => 'attending', 'notes' => 'Thêm qua Share Link: Mẹ Cô Dâu'],
+                ['name' => 'Vũ Quốc Huy', 'group' => 'Bạn Chú Rể', 'phone' => '0977889900', 'table_name' => 'Chưa xếp', 'dietary_preference' => 'Ăn chay', 'rsvp_status' => 'attending', 'notes' => 'Thêm qua Share Link: Phù rể'],
+            ];
+
+            foreach ($samples as $s) {
+                Guest::create([
+                    'workspace_id' => $workspace->id,
+                    'name' => $s['name'],
+                    'group' => $s['group'],
+                    'phone' => $s['phone'],
+                    'table_name' => $s['table_name'],
+                    'dietary_preference' => $s['dietary_preference'],
+                    'rsvp_status' => $s['rsvp_status'],
+                    'notes' => $s['notes'],
+                    'guest_slug' => Str::slug($s['name']).'-'.Str::random(4),
+                ]);
+            }
+        }
+
+        $guests = Guest::where('workspace_id', $workspace->id)->latest()->get();
+        $shareUrl = url('/wedding/share-guest-list/'.($workspace->slug ?? 'quoc-trung-hong-van'));
+
+        return Inertia::render('Wedding/Guests', [
+            'workspace' => $workspace,
+            'dbGuests' => $guests,
+            'shareUrl' => $shareUrl,
+        ]);
+    }
+
+    public function showSharedGuestList(string $token): Response
+    {
+        $workspace = Workspace::where('slug', $token)->first() ?? Workspace::latest()->first();
+        $recentGuests = Guest::where('workspace_id', $workspace->id ?? null)->latest()->take(10)->get();
+
+        return Inertia::render('Wedding/SharedGuestList', [
+            'workspace' => $workspace,
+            'recentGuests' => $recentGuests,
+            'shareToken' => $token,
+        ]);
+    }
+
+    public function storeSharedGuest(Request $request, string $token): JsonResponse
+    {
+        $workspace = Workspace::where('slug', $token)->first() ?? Workspace::latest()->first();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'group' => 'required|string|max:255',
+            'added_by' => 'nullable|string|max:255',
+            'dietary_preference' => 'nullable|string|max:255',
+            'estimated_count' => 'nullable|integer|min:1',
+        ]);
+
+        $addedByText = $validated['added_by'] ? "Thêm qua Share Link bởi: {$validated['added_by']}" : 'Thêm qua Share Link người thân';
+
+        $guest = Guest::create([
+            'workspace_id' => $workspace->id,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'] ?? null,
+            'group' => $validated['group'],
+            'dietary_preference' => $validated['dietary_preference'] ?? '-',
+            'estimated_count' => $validated['estimated_count'] ?? 1,
+            'rsvp_status' => 'attending',
+            'table_name' => 'Chưa xếp',
+            'notes' => $addedByText,
+            'guest_slug' => Str::slug($validated['name']).'-'.Str::random(4),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cảm ơn! Đã thêm khách mời [{$guest->name}] vào danh sách đám cưới thành công.",
+            'guest' => $guest,
+        ]);
     }
 
     public function invitationEditor(): Response

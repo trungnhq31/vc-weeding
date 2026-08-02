@@ -33,6 +33,10 @@ Route::get('/invitations', [PortfolioController::class, 'index'])->name('invitat
 Route::get('/invitations/{template_slug}', [WeddingController::class, 'index'])->name('invitations.show');
 Route::get('/invitations/{template_slug}/guest/{guest_slug}', [WeddingController::class, 'invitation'])->name('invitations.guest');
 
+// Public Collaborative Guest List Share Routes
+Route::get('/wedding/share-guest-list/{token}', [WeddingController::class, 'showSharedGuestList'])->name('wedding.share_guest_list');
+Route::post('/wedding/share-guest-list/{token}/add', [WeddingController::class, 'storeSharedGuest'])->name('wedding.store_shared_guest');
+
 // Subpath & Subdomain Wedding Routes (Supports both localhost:8085 and custom subdomains)
 $weddingRoutes = function () {
     Route::get('/', [WeddingController::class, 'index'])->name('wedding.index');
