@@ -30,9 +30,10 @@ This workspace enforces strict coding conventions, architecture patterns, UI des
 
 3. **Concise & Natural UI Copy Standards (STRICT)**:
    - **NO Redundant English Brackets or Tech Jargon**: Strictly avoid adding English translations in parentheses or redundant buzzwords like `(1s Quick Add)`, `(RSVP)`, `(Seating Canvas)`, `Tức thì`.
+   - **STRICT PROHIBITION OF "RSVP"**: NEVER display the English acronym "RSVP" on user-facing forms, templates, or table headers! Most guests in Vietnam do not know what RSVP means. ALWAYS use **`Xác Nhận Tham Dự`** or **`Trạng Thái Tham Dự`**.
    - **Clean & Concise Labels**: Keep titles, buttons, and placeholders clean, elegant, and directly to the point.
-     - **Good:** `Thêm Khách Mời`, `Danh Sách Khách Mời`, `Sơ Đồ Bàn Tiệc`, `Thêm Khách`
-     - **Bad:** `Thêm Nhanh Khách Mời Tức Thì (1s Quick Add)`, `Sơ Đồ Bàn Tiệc Kéo Thả (Seating Canvas)`
+     - **Good:** `Xác Nhận Tham Dự`, `Thêm Khách Mời`, `Danh Sách Khách Mời`, `Sơ Đồ Bàn Tiệc`, `Thêm Khách`
+     - **Bad:** `Xác Nhận Tham Dự (RSVP)`, `Thêm Nhanh Khách Mời Tức Thì (1s Quick Add)`, `Sơ Đồ Bàn Tiệc Kéo Thả (Seating Canvas)`
 
 ---
 

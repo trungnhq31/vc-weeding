@@ -541,7 +541,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                   <!-- Clickable Sort: Status -->
                   <th @click="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
                     <div class="flex items-center gap-1.5">
-                      <span>Xác nhận RSVP</span>
+                      <span>Trạng thái tham dự</span>
                       <ArrowUp v-if="sortField === 'status' && sortOrder === 'asc'" class="w-3.5 h-3.5 text-[#881337]" />
                       <ArrowDown v-else-if="sortField === 'status' && sortOrder === 'desc'" class="w-3.5 h-3.5 text-[#881337]" />
                       <ArrowUpDown v-else class="w-3.5 h-3.5 text-slate-300" />
