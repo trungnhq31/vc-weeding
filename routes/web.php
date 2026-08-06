@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\GroundedAiController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
@@ -35,6 +36,10 @@ Route::get('/invitations/{template_slug}/guest/{guest_slug}', [WeddingController
 Route::get('/wedding/share-guest-list/{token}', [WeddingController::class, 'showSharedGuestList'])->name('wedding.share_guest_list');
 Route::post('/wedding/share-guest-list/{token}/add', [WeddingController::class, 'storeSharedGuest'])->name('wedding.store_shared_guest');
 
+// Public Shareable Online Gallery Routes (QR Code Scan for Guests)
+Route::get('/wedding/shared-gallery/{slug}', [GalleryController::class, 'publicShow'])->name('wedding.shared_gallery');
+Route::post('/wedding/shared-gallery/{slug}/upload', [GalleryController::class, 'publicGuestUpload'])->name('wedding.shared_gallery.upload');
+
 // Subpath & Subdomain Wedding Routes (Supports both localhost:8085 and custom subdomains)
 $weddingRoutes = function () {
     Route::get('/', [WeddingController::class, 'index'])->name('wedding.index');
@@ -46,6 +51,13 @@ $weddingRoutes = function () {
     Route::post('/tasks/{task}/execute-action', [WeddingTimelineController::class, 'executeTaskAction'])->name('wedding.tasks.execute_action');
     Route::get('/tasks/{task}/ai-recommendation', [WeddingTimelineController::class, 'getTaskAiRecommendation'])->name('wedding.tasks.ai_recommendation');
     Route::post('/milestones/{milestone}/auto-complete-ai', [WeddingTimelineController::class, 'autoCompleteMilestoneAi'])->name('wedding.milestones.auto_complete_ai');
+
+    // Online Wedding Photo & Video Gallery Manager
+    Route::get('/gallery', [GalleryController::class, 'index'])->name('wedding.gallery.index');
+    Route::post('/gallery', [GalleryController::class, 'store'])->name('wedding.gallery.store');
+    Route::post('/gallery/{id}/pin', [GalleryController::class, 'togglePin'])->name('wedding.gallery.pin');
+    Route::post('/gallery/{id}/approve', [GalleryController::class, 'toggleApproval'])->name('wedding.gallery.approve');
+    Route::delete('/gallery/{id}', [GalleryController::class, 'destroy'])->name('wedding.gallery.delete');
 
     // Vendor CRM & Grounded AI Assistant
     Route::get('/vendors', [VendorController::class, 'index'])->name('wedding.vendors.index');

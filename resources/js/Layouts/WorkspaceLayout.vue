@@ -22,7 +22,8 @@ import {
   Command,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelLeft
+  PanelLeft,
+  Image as ImageIcon
 } from 'lucide-vue-next';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
 import CommandPaletteModal from '@/Components/Wedding/CommandPaletteModal.vue';
@@ -46,6 +47,7 @@ const navigationItems = [
   { id: 'timeline', label: 'Lộ trình & Task', href: '/wedding/timeline', icon: Calendar },
   { id: 'budget', label: 'Ngân sách thu chi', href: '/wedding/budget', icon: DollarSign },
   { id: 'guests', label: 'Khách mời & Sơ đồ bàn', href: '/wedding/guests', icon: Users },
+  { id: 'gallery', label: 'Album & Gallery Online', href: '/wedding/gallery', icon: ImageIcon },
   { id: 'invitation-editor', label: 'Tùy biến Thiệp cưới', href: '/wedding/invitation-editor', icon: Palette },
   { id: 'documents', label: 'Hợp đồng & Tài liệu', href: '/wedding/documents', icon: FileText },
   { id: 'vendors', label: 'Đối tác Vendor CRM', href: '/wedding/vendors', icon: Store },
