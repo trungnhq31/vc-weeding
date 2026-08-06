@@ -27,6 +27,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Thống nhất ngân sách trần & danh sách khách mời dự kiến',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -40,6 +41,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Khảo sát thực đơn & Đặt cọc sảnh tiệc cưới',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 100000000,
                         'actual_cost' => 0,
@@ -54,6 +56,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Chốt phong cách trang trí & tone màu chủ đạo cho tiệc cưới',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -80,6 +83,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Chốt ekip chụp ảnh Pre-wedding & quay phim cưới',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 35000000,
                         'actual_cost' => 0,
@@ -93,6 +97,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Chọn mẫu nhẫn cưới & khắc tên hai đứa',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 15000000,
                         'actual_cost' => 0,
@@ -106,6 +111,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Thử và chốt Váy cưới chính cô dâu + Vest chú rể',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 20000000,
                         'actual_cost' => 0,
@@ -118,6 +124,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Thiết lập Trang Thiệp Cưới Điện Tử Online trên Eloria OS',
+                        'priority' => 'medium',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -144,6 +151,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Rà soát danh sách khách mời (Họ hàng, Bạn bè, Đồng nghiệp)',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -156,6 +164,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'In ấn thiệp cưới giấy & Tạo thiệp mở sáp online',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -168,6 +177,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Gửi thiệp cưới Online cá nhân hóa cho từng khách mời',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -180,6 +190,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Theo dõi RSVP chốt số lượng người tham dự & sơ đồ bàn tiệc',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -206,6 +217,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Đặt dịch vụ trang trí hoa tươi Lễ Gia Tiên nhà trai & nhà gái',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 25000000,
                         'actual_cost' => 0,
@@ -218,6 +230,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Nếm thử món & chốt thực đơn tiệc cưới chính thức',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -229,6 +242,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Gặp MC chốt kịch bản chương trình tiệc & chọn nhạc làm lễ',
+                        'priority' => 'medium',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -255,6 +269,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Chốt số lượng bàn tiệc chính thức với nhà hàng',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -266,6 +281,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Chuẩn bị quà đáp lễ dành cho khách mời',
+                        'priority' => 'medium',
                         'is_completed' => false,
                         'estimated_cost' => 10000000,
                         'actual_cost' => 0,
@@ -277,6 +293,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Họp ban khánh tiết & Phân công nhiệm vụ lễ tiệc',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -288,6 +305,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Thử lại váy cưới & vest lần cuối trước ngày cưới',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
@@ -313,6 +331,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'tasks' => [
                     [
                         'title' => 'Trang điểm cô dâu & Chú rể chuẩn bị xe hoa làm lễ',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -325,6 +344,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Lễ Gia Tiên hai nhà & Nghi thức cưới truyền thống',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 10000000,
                         'actual_cost' => 0,
@@ -337,6 +357,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Đón khách & Khai tiệc cưới hoành tráng tại nhà hàng',
+                        'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
                         'actual_cost' => 0,
@@ -349,6 +370,7 @@ class WeddingMilestoneSeeder extends Seeder
                     ],
                     [
                         'title' => 'Trải nghiệm khoảnh khắc hạnh phúc trọn vẹn nhất đời!',
+                        'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,

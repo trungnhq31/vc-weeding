@@ -17,7 +17,10 @@ import {
     ListTodo, 
     Target, 
     ArrowRight,
-    HelpCircle
+    HelpCircle,
+    Flame,
+    ShieldAlert,
+    Filter
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
@@ -33,7 +36,7 @@ interface Task {
     due_date?: string;
     estimated_cost?: number;
     actual_cost?: number;
-    priority?: 'high' | 'medium' | 'low';
+    priority?: 'urgent' | 'high' | 'medium' | 'low';
 }
 
 interface Milestone {
@@ -93,16 +96,17 @@ const props = defineProps<{
 const isAiDrawerOpen = ref(false);
 const selectedMilestone = ref<Milestone | null>(null);
 const expandedTaskId = ref<string | null>(null);
-const savingTaskId = ref<string | null>(null);
 
 const showAddTaskModal = ref(false);
 const newTaskTitle = ref('');
 const selectedMilestoneForAdd = ref<Milestone | null>(null);
 const newTaskEstimatedCost = ref<number | null>(null);
+const newTaskPriority = ref<'urgent' | 'high' | 'medium' | 'low'>('high');
 
-// Interactive View Toggles
-const activeViewTab = ref<'roadmap' | 'today' | 'summary'>('roadmap');
+// Interactive View Toggles & Priority Filter
+const activeViewTab = ref<'roadmap' | 'today'>('roadmap');
 const taskSearchQuery = ref('');
+const selectedPriorityFilter = ref<string>('all');
 
 const openMilestoneModal = (milestone: Milestone) => {
     selectedMilestone.value = milestone;
@@ -142,6 +146,7 @@ const handleAddTask = () => {
     const newTask: Task = {
         id: `task-${Date.now()}`,
         title: newTaskTitle.value,
+        priority: newTaskPriority.value,
         is_completed: false,
         estimated_cost: newTaskEstimatedCost.value || 0,
         actual_cost: 0,
@@ -150,7 +155,39 @@ const handleAddTask = () => {
     selectedMilestoneForAdd.value.tasks.push(newTask);
     newTaskTitle.value = '';
     newTaskEstimatedCost.value = null;
+    newTaskPriority.value = 'high';
     showAddTaskModal.value = false;
+};
+
+// Priority Helpers
+const getPriorityBadgeClass = (priority?: string) => {
+    switch (priority) {
+        case 'urgent':
+            return 'bg-rose-100 text-rose-800 border-rose-200';
+        case 'high':
+            return 'bg-amber-100 text-amber-900 border-amber-200';
+        case 'medium':
+            return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'low':
+            return 'bg-slate-100 text-slate-700 border-slate-200';
+        default:
+            return 'bg-amber-100 text-amber-900 border-amber-200';
+    }
+};
+
+const getPriorityLabel = (priority?: string) => {
+    switch (priority) {
+        case 'urgent':
+            return '🔥 Gấp / Khẩn Cấp';
+        case 'high':
+            return '⚡ Ưu Tiên Cao';
+        case 'medium':
+            return '📌 Trung Bình';
+        case 'low':
+            return '🌱 Thấp';
+        default:
+            return '⚡ Ưu Tiên Cao';
+    }
 };
 
 // Calculate Days Until Wedding
@@ -162,7 +199,7 @@ const daysUntilWedding = computed(() => {
     return diff > 0 ? diff : 0;
 });
 
-// Focus Today Tasks (Top 3 Uncompleted Tasks from current milestone)
+// Focus Today Tasks (Filtered Urgent & High Tasks)
 const focusTodayTasks = computed(() => {
     const allPending: { task: Task; milestoneTitle: string; timeframe: string }[] = [];
     props.milestones.forEach(m => {
@@ -172,17 +209,30 @@ const focusTodayTasks = computed(() => {
             }
         });
     });
+    // Sort by priority rank
+    allPending.sort((a, b) => {
+        const rank = { urgent: 1, high: 2, medium: 3, low: 4 };
+        return (rank[a.task.priority || 'high'] || 2) - (rank[b.task.priority || 'high'] || 2);
+    });
     return allPending.slice(0, 4);
 });
 
-// Filtered Milestones for Clean View
+// Filtered Milestones & Tasks based on Search & Priority Filter
 const filteredMilestones = computed(() => {
     return props.milestones.map(m => {
         let tasks = m.tasks || [];
+        
+        // Priority Filter
+        if (selectedPriorityFilter.value !== 'all') {
+            tasks = tasks.filter(t => (t.priority || 'high') === selectedPriorityFilter.value);
+        }
+
+        // Search Filter
         if (taskSearchQuery.value.trim()) {
             const q = taskSearchQuery.value.toLowerCase().trim();
             tasks = tasks.filter(t => t.title.toLowerCase().includes(q));
         }
+
         return {
             ...m,
             tasks,
@@ -195,23 +245,23 @@ const filteredMilestones = computed(() => {
 </script>
 
 <template>
-    <Head title="Lộ Trình & Task Cưới — Eloria OS" />
+    <Head title="Lộ Trình & Ưu Tiên Công Việc Cưới — Eloria OS" />
 
-    <WorkspaceLayout title="Lộ Trình & Task Cưới" active-nav="timeline">
+    <WorkspaceLayout title="Lộ Trình & Mức Ưu Tiên" active-nav="timeline">
         <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
             
-            <!-- 1. Clear Guidance Header (Giao Diện Hướng Dẫn Rõ Ràng) -->
+            <!-- 1. Clear Guidance Header (Giao Diện Hướng Dẫn Kèm Ưu Tiên) -->
             <div class="p-8 rounded-3xl bg-white border border-rose-100 shadow-xl shadow-rose-900/5 space-y-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
                     <div class="space-y-2">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-900 text-[11px] font-extrabold uppercase tracking-wider">
-                            <Target class="w-3.5 h-3.5 text-rose-600" /> BẢN ĐỒ HƯỚNG DẪN LÊN KẾ HOẠCH CƯỚI
+                            <Target class="w-3.5 h-3.5 text-rose-600" /> BẢN ĐỒ LỘ TRÌNH KÈM MỨC ƯU TIÊN
                         </div>
                         <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">
                             {{ workspace?.groom_name && workspace?.bride_name ? `Lộ Trình Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : 'Kế Hoạch Chuẩn Bị Đám Cưới Trọn Gói' }}
                         </h1>
                         <p class="text-xs md:text-sm text-slate-600 font-medium">
-                            Đã chia sẵn theo từng mốc thời gian chuẩn (Từ 6 tháng đến Ngày Cưới). Bạn chỉ cần làm theo từng bước bên dưới!
+                            Mỗi công việc được tự động gắn mức độ ưu tiên (<span class="text-rose-700 font-bold">🔥 Gấp</span>, <span class="text-amber-800 font-bold">⚡ Cao</span>, <span class="text-blue-700 font-bold">📌 Trung Bình</span>) giúp bạn dễ dàng làm việc quan trọng nhất trước!
                         </p>
                     </div>
 
@@ -229,47 +279,34 @@ const filteredMilestones = computed(() => {
                     </div>
                 </div>
 
-                <!-- 3 Clear Metric Summary Pills -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium text-slate-600">
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-sm shrink-0">
-                            {{ stats.completedTasks }}/{{ stats.totalTasks }}
-                        </div>
-                        <div>
-                            <span class="font-bold text-slate-900 block text-xs">Việc Đã Hoàn Thành</span>
-                            <span class="text-[11px] text-slate-500">Tiến độ {{ Math.round(stats.overallProgress || 0) }}% toàn lộ trình</span>
-                        </div>
+                <!-- Priority Status Indicators Banner -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-medium text-slate-700">
+                    <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between">
+                        <span class="font-bold text-rose-900">🔥 Khẩn Cấp / Gấp</span>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 font-black text-[11px]">Ưu tiên #1</span>
                     </div>
-
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-black text-xs shrink-0">
-                            💰
-                        </div>
-                        <div>
-                            <span class="font-bold text-slate-900 block text-xs">Ngân Sách Dự Chi</span>
-                            <span class="text-[11px] text-slate-500">{{ formatCurrency(stats.totalBudgetAllocated) }}</span>
-                        </div>
+                    <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between">
+                        <span class="font-bold text-amber-900">⚡ Ưu Tiên Cao</span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[11px]">Ưu tiên #2</span>
                     </div>
-
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs shrink-0">
-                            ✅
-                        </div>
-                        <div>
-                            <span class="font-bold text-slate-900 block text-xs">Đã Cọc Nhà Hàng / Vendor</span>
-                            <span class="text-[11px] text-emerald-700 font-bold">{{ formatCurrency(stats.totalBudgetSpent) }}</span>
-                        </div>
+                    <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-between">
+                        <span class="font-bold text-blue-900">📌 Trung Bình</span>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-950 font-black text-[11px]">Ưu tiên #3</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between">
+                        <span class="font-bold text-slate-800">🌱 Thấp</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-900 font-black text-[11px]">Ưu tiên #4</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Focus Today Block: What Should I Do Right Now? (Nhiệm Vụ Ưu Tiên Cần Làm Ngay) -->
+            <!-- 2. Focus Today Block: Top Priority Tasks (Việc Ưu Tiên Hàng Đầu) -->
             <div class="p-6 rounded-3xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 text-white shadow-xl space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <span class="w-3 h-3 rounded-full bg-rose-400 animate-ping"></span>
                         <h2 class="text-base font-serif font-bold text-white flex items-center gap-2">
-                            🎯 Việc Cần Ưu Tiên Làm Ngay Hôm Nay
+                            🎯 Việc Ưu Tiên Cao Nhất Cần Làm Hôm Nay
                         </h2>
                     </div>
                     <span class="text-xs text-rose-200 font-medium">Làm xong tới đâu tích chọn tới đó!</span>
@@ -287,6 +324,11 @@ const filteredMilestones = computed(() => {
                                 <Check v-if="item.task.is_completed" class="w-3.5 h-3.5 text-rose-300 stroke-[3]" />
                             </div>
                             <div class="truncate">
+                                <div class="flex items-center gap-2 mb-0.5">
+                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-bold border uppercase" :class="getPriorityBadgeClass(item.task.priority)">
+                                        {{ getPriorityLabel(item.task.priority) }}
+                                    </span>
+                                </div>
                                 <span class="font-bold text-white block truncate">{{ item.task.title }}</span>
                                 <span class="text-[11px] text-rose-200/80">{{ item.timeframe }} • {{ item.milestoneTitle }}</span>
                             </div>
@@ -298,50 +340,34 @@ const filteredMilestones = computed(() => {
                 </div>
             </div>
 
-            <!-- Overdue Plan Alert & AI Remediation Box -->
-            <div v-if="(overdueCount && overdueCount > 0) || (remediationSuggestions && remediationSuggestions.length > 0)" class="p-6 rounded-3xl bg-amber-50 border border-amber-200 shadow-xs space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2.5 text-amber-900 font-bold text-xs">
-                        <AlertTriangle class="w-4 h-4 text-amber-600" />
-                        <span>Đang có {{ overdueCount || remediationSuggestions?.length || 1 }} mục cần lưu ý trễ hạn</span>
-                    </div>
-                    <button @click="isAiDrawerOpen = true" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-                        <Sparkles class="w-3.5 h-3.5 text-rose-400" /> Trợ Lý AI Gợi Ý
-                    </button>
-                </div>
-            </div>
-
-            <!-- 3. Clean View Switcher & Search Bar -->
+            <!-- 3. Filters & Search Bar -->
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-rose-100 shadow-2xs">
-                <div class="flex items-center gap-2">
-                    <button 
-                        @click="activeViewTab = 'roadmap'"
-                        class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                        :class="activeViewTab === 'roadmap' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                    >
-                        <ListTodo class="w-4 h-4" /> Lộ Trình Theo Bước
-                    </button>
-                    <button 
-                        @click="activeViewTab = 'today'"
-                        class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                        :class="activeViewTab === 'today' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                    >
-                        <Target class="w-4 h-4" /> Việc Ưu Tiên
-                    </button>
+                <!-- Priority Filter Switcher -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <Filter class="w-4 h-4 text-rose-600 shrink-0" />
+                    <span class="text-xs font-bold text-slate-700 shrink-0">Lọc Mức Ưu Tiên:</span>
+                    <select v-model="selectedPriorityFilter" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-hidden">
+                        <option value="all">Tất Cả Mức Ưu Tiên</option>
+                        <option value="urgent">🔥 Gấp / Khẩn Cấp</option>
+                        <option value="high">⚡ Ưu Tiên Cao</option>
+                        <option value="medium">📌 Trung Bình</option>
+                        <option value="low">🌱 Thấp</option>
+                    </select>
                 </div>
 
-                <div class="relative w-full sm:w-72">
+                <!-- Search Input -->
+                <div class="relative w-full sm:w-64">
                     <Search class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
                         v-model="taskSearchQuery"
                         type="text" 
-                        placeholder="Tìm công việc (VD: sảnh tiệc)..." 
-                        class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-rose-400"
+                        placeholder="Tìm công việc..." 
+                        class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-rose-400"
                     />
                 </div>
             </div>
 
-            <!-- 4. Main Step-by-step Timeline Cards Stream (Bố Cục Rõ Ràng Dễ Nhìn) -->
+            <!-- 4. Step-by-Step Milestone Stream with Priority Badges -->
             <div class="space-y-6">
                 <div 
                     v-for="(milestone, index) in filteredMilestones" 
@@ -376,7 +402,7 @@ const filteredMilestones = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Clean Task Checklist Section -->
+                    <!-- Clean Task Checklist Section with Priority Badges -->
                     <div class="p-6 space-y-2.5">
                         <div 
                             v-for="task in milestone.tasks" 
@@ -395,7 +421,12 @@ const filteredMilestones = computed(() => {
                                 <span class="truncate text-xs font-bold">{{ task.title }}</span>
                             </div>
 
-                            <div class="flex items-center gap-2 shrink-0">
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <!-- Priority Badge -->
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase" :class="getPriorityBadgeClass(task.priority)">
+                                    {{ getPriorityLabel(task.priority) }}
+                                </span>
+
                                 <span v-if="task.estimated_cost" class="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                                     {{ formatCurrency(task.estimated_cost) }}
                                 </span>
@@ -406,7 +437,7 @@ const filteredMilestones = computed(() => {
             </div>
         </main>
 
-        <!-- Task Add Modal -->
+        <!-- Task Add Modal with Priority Field -->
         <div v-if="showAddTaskModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
             <div class="w-full max-w-md bg-white p-6 rounded-3xl border border-rose-100 shadow-2xl space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -420,6 +451,16 @@ const filteredMilestones = computed(() => {
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Tên Công Việc *</label>
                         <input v-model="newTaskTitle" type="text" placeholder="VD: Đặt cọc địa điểm tiệc cưới..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:border-rose-400" />
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Mức Độ Ưu Tiên *</label>
+                        <select v-model="newTaskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden">
+                            <option value="urgent">🔥 Gấp / Khẩn Cấp (Xử lý ngay)</option>
+                            <option value="high">⚡ Ưu Tiên Cao (Quan trọng)</option>
+                            <option value="medium">📌 Trung Bình (Theo tiến độ)</option>
+                            <option value="low">🌱 Thấp (Tham khảo)</option>
+                        </select>
                     </div>
 
                     <div>
@@ -462,18 +503,23 @@ const filteredMilestones = computed(() => {
                     </div>
 
                     <div class="space-y-3">
-                        <h4 class="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Danh Sách Công Việc</h4>
+                        <h4 class="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Danh Sách Công Việc Kèm Ưu Tiên</h4>
                         <div class="space-y-2">
                             <div v-for="task in selectedMilestone.tasks" :key="task.id" class="p-3.5 rounded-2xl border border-slate-200/80 bg-white flex items-center justify-between gap-3 shadow-2xs">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
                                     <button @click.stop="toggleTask(task)" class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0" :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'">
                                         <Check v-if="task.is_completed" class="w-3.5 h-3.5 stroke-[3]" />
                                     </button>
-                                    <span class="text-xs font-bold text-slate-900" :class="{ 'line-through text-slate-400': task.is_completed }">{{ task.title }}</span>
+                                    <span class="text-xs font-bold text-slate-900 truncate" :class="{ 'line-through text-slate-400': task.is_completed }">{{ task.title }}</span>
                                 </div>
-                                <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
-                                    {{ formatCurrency(task.estimated_cost) }}
-                                </span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold border uppercase" :class="getPriorityBadgeClass(task.priority)">
+                                        {{ getPriorityLabel(task.priority) }}
+                                    </span>
+                                    <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
+                                        {{ formatCurrency(task.estimated_cost) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
