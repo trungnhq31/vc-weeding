@@ -20,7 +20,10 @@ class CreateVendorAction
      *     paid_amount?: float|int|string,
      *     due_date?: string|null,
      *     contract_file?: string|null,
-     *     notes?: string|null
+     *     notes?: string|null,
+     *     address?: string|null,
+     *     latitude?: float|int|string|null,
+     *     longitude?: float|int|string|null
      * } $data
      */
     public function execute(array $data): Vendor
@@ -48,6 +51,9 @@ class CreateVendorAction
             'due_date' => $data['due_date'] ?? null,
             'contract_file' => $data['contract_file'] ?? null,
             'notes' => $data['notes'] ?? null,
+            'address' => $data['address'] ?? null,
+            'latitude' => isset($data['latitude']) && $data['latitude'] !== '' ? (float) $data['latitude'] : null,
+            'longitude' => isset($data['longitude']) && $data['longitude'] !== '' ? (float) $data['longitude'] : null,
         ]);
     }
 }

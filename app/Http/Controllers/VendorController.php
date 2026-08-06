@@ -65,6 +65,9 @@ class VendorController extends Controller
                     'vibe_category' => $vendor->vibe_category ?? 'pastel',
                     'city' => $vendor->city ?? 'TP. Hồ Chí Minh',
                     'district' => $vendor->district ?? 'Quận 1',
+                    'address' => $vendor->address,
+                    'latitude' => $vendor->latitude ? (float) $vendor->latitude : null,
+                    'longitude' => $vendor->longitude ? (float) $vendor->longitude : null,
                     'contact_name' => $vendor->contact_name,
                     'phone' => $vendor->phone,
                     'email' => $vendor->email,
@@ -116,6 +119,9 @@ class VendorController extends Controller
             'due_date' => 'nullable|date',
             'contract_file' => 'nullable|string|max:500',
             'notes' => 'nullable|string',
+            'address' => 'nullable|string|max:500',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $vendor = $action->execute(array_merge($validated, [

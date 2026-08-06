@@ -21,6 +21,7 @@ class Vendor extends Model
         'vibe_category',
         'city',
         'district',
+        'address',
         'latitude',
         'longitude',
         'price_tier',
