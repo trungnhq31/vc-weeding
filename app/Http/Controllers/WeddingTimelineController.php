@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\WeddingMilestone;
 use App\Models\WeddingTask;
+use App\Modules\GroundedAI\Services\GroundedDataQueryService;
 use App\Modules\Workspace\Models\Workspace;
 use Database\Seeders\WeddingMilestoneSeeder;
 use Illuminate\Http\JsonResponse;
@@ -32,14 +33,19 @@ class WeddingTimelineController extends Controller
         $overallProgress = $totalTasks > 0 ? (int) round(($completedTasks / $totalTasks) * 100) : 0;
 
         $workspace = Workspace::latest()->first();
+        $workspaceId = $workspace?->id ?? '';
 
-        $budgetCap = $workspace ? (float) $workspace->budget_cap : 250000000.0;
+        $groundedAi = new GroundedDataQueryService;
+        $metrics = $workspaceId ? $groundedAi->getWorkspaceMetrics($workspaceId) : [];
+
+        $budgetCap = $workspace ? (float) $workspace->budget_cap : 350000000.0;
         $totalBudgetAllocated = WeddingMilestone::sum('budget_allocated');
         $totalBudgetSpent = WeddingMilestone::sum('budget_spent');
 
         return Inertia::render('Wedding/Timeline', [
             'milestones' => $milestones,
             'workspace' => $workspace ? [
+                'id' => $workspace->id,
                 'name' => $workspace->name,
                 'groom_name' => $workspace->groom_name ?? 'Nguyễn Hoàng Quốc Trung',
                 'bride_name' => $workspace->bride_name ?? 'Lê Thị Hồng Vân',
@@ -58,6 +64,8 @@ class WeddingTimelineController extends Controller
                 'totalBudgetAllocated' => $budgetCap > 0 ? $budgetCap : (float) $totalBudgetAllocated,
                 'totalBudgetSpent' => (float) $totalBudgetSpent,
             ],
+            'remediationSuggestions' => $metrics['remediation_suggestions'] ?? [],
+            'overdueCount' => $metrics['tasks']['overdue_count'] ?? 0,
         ]);
     }
 
