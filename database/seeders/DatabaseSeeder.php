@@ -18,6 +18,7 @@ use App\Modules\Guest\Models\Table;
 use App\Modules\Invitation\Models\InvitationTemplate;
 use App\Modules\Invitation\Models\WorkspaceInvitation;
 use App\Modules\Task\Models\Task;
+use App\Modules\Vendor\Models\Vendor;
 use App\Modules\Workspace\Models\Workspace;
 use App\Modules\Workspace\Models\WorkspaceMember;
 use Illuminate\Database\Seeder;
@@ -27,21 +28,48 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // -1. Seed Demo Login Accounts
-        User::updateOrCreate(
-            ['email' => 'groom@eloria.vn'],
-            ['name' => 'Chú Rể Quốc Trung', 'password' => Hash::make('password')]
-        );
+        // 0. Seed Demo Accounts for Each Role (Quick Login)
+        $demoUsers = [
+            [
+                'name' => 'Nguyễn Hoàng Quốc Trung (Chú Rể Owner)',
+                'email' => 'daure@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'Chú Rể Quốc Trung',
+                'email' => 'groom@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'Cô Dâu Hồng Vân',
+                'email' => 'bride@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'L’Amour Wedding Planner (Planner Pro)',
+                'email' => 'planner@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'White Palace Event Center (Vendor Partner)',
+                'email' => 'vendor@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'Anh Tuấn & Chị Lan (Khách Mời V.I.P)',
+                'email' => 'khachmoi@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+            [
+                'name' => 'Super Administrator (Eloria Admin)',
+                'email' => 'admin@eloria.vn',
+                'password' => Hash::make('password'),
+            ],
+        ];
 
-        User::updateOrCreate(
-            ['email' => 'bride@eloria.vn'],
-            ['name' => 'Cô Dâu Hồng Vân', 'password' => Hash::make('password')]
-        );
-
-        User::updateOrCreate(
-            ['email' => 'admin@eloria.vn'],
-            ['name' => 'Eloria Admin', 'password' => Hash::make('password')]
-        );
+        foreach ($demoUsers as $u) {
+            User::updateOrCreate(['email' => $u['email']], $u);
+        }
 
         // 0. Seed Invitation Templates Catalog (10 Curated Premium Templates)
         $templates = [
@@ -145,6 +173,9 @@ class DatabaseSeeder extends Seeder
                 'wedding_hashtag' => '#TrungVanWedding2026',
                 'couple_story' => 'Hành trình 6 năm tình yêu từ mái trường đại học đến ngày chung đôi hạnh phúc.',
                 'budget_cap' => 350000000.00,
+                'ceremony_type' => 'traditional_south',
+                'wedding_vibe' => 'pastel',
+                'region' => 'hcm',
                 'currency' => 'VND',
             ]
         );
@@ -268,6 +299,47 @@ class DatabaseSeeder extends Seeder
             'payment_status' => 'fully_paid',
             'due_payment_date' => null,
             'notes' => 'Đã thanh toán trọn gói.',
+        ]);
+
+        // 0.4 Seed Sample Workspace Vendors with Location Coordinates
+        Vendor::create([
+            'workspace_id' => $workspace->id,
+            'name' => 'White Palace Event Center',
+            'category' => 'venue',
+            'vibe_category' => 'pastel',
+            'city' => 'TP. Hồ Chí Minh',
+            'district' => 'Phú Nhuận',
+            'address' => '194 Hoàng Văn Thụ, Phường 9, Phú Nhuận',
+            'latitude' => 10.8045,
+            'longitude' => 106.6713,
+            'contact_name' => 'Chị Thanh (Quản lý Tiệc)',
+            'phone' => '0903 112 233',
+            'email' => 'booking@whitepalace.com.vn',
+            'contract_amount' => 185000000.00,
+            'paid_amount' => 50000000.00,
+            'payment_status' => 'partially_paid',
+            'due_date' => now()->addDays(20)->format('Y-m-d'),
+            'notes' => 'Đã cọc đợt 1 giữ sảnh Grand Ballroom',
+        ]);
+
+        Vendor::create([
+            'workspace_id' => $workspace->id,
+            'name' => 'Chung Thanh Phong Bridal',
+            'category' => 'attire',
+            'vibe_category' => 'pastel',
+            'city' => 'TP. Hồ Chí Minh',
+            'district' => 'Quận 1',
+            'address' => '189 Nguyễn Trãi, Phường Bến Thành, Quận 1',
+            'latitude' => 10.7709,
+            'longitude' => 106.6923,
+            'contact_name' => 'Boutique Specialist',
+            'phone' => '0938 888 888',
+            'email' => 'bridal@chungthanhphong.com',
+            'contract_amount' => 48000000.00,
+            'paid_amount' => 48000000.00,
+            'payment_status' => 'fully_paid',
+            'due_date' => null,
+            'notes' => 'Váy cưới Haute Couture thiết kế riêng',
         ]);
 
         // 1. Seed Sample Guests with workspace_id and table_id
