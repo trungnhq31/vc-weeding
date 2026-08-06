@@ -19,8 +19,17 @@ import {
     ArrowRight,
     HelpCircle,
     Flame,
-    ShieldAlert,
-    Filter
+    Zap,
+    Bookmark,
+    CircleDot,
+    Filter,
+    Coins,
+    DollarSign,
+    Building2,
+    FileText,
+    Store,
+    Save,
+    ExternalLink
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
@@ -95,7 +104,16 @@ const props = defineProps<{
 
 const isAiDrawerOpen = ref(false);
 const selectedMilestone = ref<Milestone | null>(null);
-const expandedTaskId = ref<string | null>(null);
+
+// Dedicated Right Drawer for Selected Task Detail
+const selectedTaskDetail = ref<{
+    task: Task;
+    milestoneTitle?: string;
+    timeframe?: string;
+} | null>(null);
+
+const isSavingTask = ref(false);
+const saveSuccessMsg = ref(false);
 
 const showAddTaskModal = ref(false);
 const newTaskTitle = ref('');
@@ -103,19 +121,30 @@ const selectedMilestoneForAdd = ref<Milestone | null>(null);
 const newTaskEstimatedCost = ref<number | null>(null);
 const newTaskPriority = ref<'urgent' | 'high' | 'medium' | 'low'>('high');
 
-// Interactive View Toggles & Priority Filter
+// Filters
 const activeViewTab = ref<'roadmap' | 'today'>('roadmap');
 const taskSearchQuery = ref('');
 const selectedPriorityFilter = ref<string>('all');
 
 const openMilestoneModal = (milestone: Milestone) => {
     selectedMilestone.value = milestone;
-    expandedTaskId.value = null;
 };
 
-const closeDetail = () => {
+const openTaskDetail = (task: Task, milestoneTitle?: string, timeframe?: string) => {
+    selectedTaskDetail.value = {
+        task: { ...task },
+        milestoneTitle: milestoneTitle || 'Kế hoạch chung',
+        timeframe: timeframe || 'Đang diễn ra'
+    };
+};
+
+const closeTaskDetail = () => {
+    selectedTaskDetail.value = null;
+    saveSuccessMsg.value = false;
+};
+
+const closeMilestoneDetail = () => {
     selectedMilestone.value = null;
-    expandedTaskId.value = null;
 };
 
 const formatCurrency = (val: number) => {
@@ -124,6 +153,9 @@ const formatCurrency = (val: number) => {
 
 const toggleTask = async (task: Task) => {
     task.is_completed = !task.is_completed;
+    if (selectedTaskDetail.value && selectedTaskDetail.value.task.id === task.id) {
+        selectedTaskDetail.value.task.is_completed = task.is_completed;
+    }
     try {
         const response = await fetch(`/wedding/tasks/${task.id}/toggle`, {
             method: 'POST',
@@ -138,6 +170,45 @@ const toggleTask = async (task: Task) => {
         }
     } catch (e) {
         console.error('Error toggling task:', e);
+    }
+};
+
+const saveTaskDetails = async () => {
+    if (!selectedTaskDetail.value) return;
+    isSavingTask.value = true;
+    const task = selectedTaskDetail.value.task;
+
+    try {
+        const response = await fetch(`/wedding/tasks/${task.id}/details`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+            },
+            body: JSON.stringify({
+                notes: task.notes,
+                vendor_info: task.vendor_info,
+                actual_cost: task.actual_cost,
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Update in local milestones array
+            props.milestones.forEach(m => {
+                const target = m.tasks.find(t => t.id === task.id);
+                if (target) {
+                    target.notes = task.notes;
+                    target.vendor_info = task.vendor_info;
+                    target.actual_cost = task.actual_cost;
+                }
+            });
+            saveSuccessMsg.value = true;
+            setTimeout(() => { saveSuccessMsg.value = false; }, 3000);
+        }
+    } catch (e) {
+        console.error('Error saving task details:', e);
+    } finally {
+        isSavingTask.value = false;
     }
 };
 
@@ -159,7 +230,7 @@ const handleAddTask = () => {
     showAddTaskModal.value = false;
 };
 
-// Priority Helpers
+// Priority Helpers with Lucide Professional Badges
 const getPriorityBadgeClass = (priority?: string) => {
     switch (priority) {
         case 'urgent':
@@ -175,22 +246,22 @@ const getPriorityBadgeClass = (priority?: string) => {
     }
 };
 
-const getPriorityLabel = (priority?: string) => {
+const getPriorityLabelText = (priority?: string) => {
     switch (priority) {
         case 'urgent':
-            return '🔥 Gấp / Khẩn Cấp';
+            return 'Khẩn Cấp';
         case 'high':
-            return '⚡ Ưu Tiên Cao';
+            return 'Ưu Tiên Cao';
         case 'medium':
-            return '📌 Trung Bình';
+            return 'Trung Bình';
         case 'low':
-            return '🌱 Thấp';
+            return 'Thấp';
         default:
-            return '⚡ Ưu Tiên Cao';
+            return 'Ưu Tiên Cao';
     }
 };
 
-// Calculate Days Until Wedding
+// Days Until Wedding
 const daysUntilWedding = computed(() => {
     if (!props.workspace?.wedding_date) return 78;
     const wedding = new Date(props.workspace.wedding_date).getTime();
@@ -199,7 +270,7 @@ const daysUntilWedding = computed(() => {
     return diff > 0 ? diff : 0;
 });
 
-// Focus Today Tasks (Filtered Urgent & High Tasks)
+// Focus Today Tasks Sorted by Priority Rank
 const focusTodayTasks = computed(() => {
     const allPending: { task: Task; milestoneTitle: string; timeframe: string }[] = [];
     props.milestones.forEach(m => {
@@ -209,7 +280,6 @@ const focusTodayTasks = computed(() => {
             }
         });
     });
-    // Sort by priority rank
     allPending.sort((a, b) => {
         const rank = { urgent: 1, high: 2, medium: 3, low: 4 };
         return (rank[a.task.priority || 'high'] || 2) - (rank[b.task.priority || 'high'] || 2);
@@ -222,12 +292,10 @@ const filteredMilestones = computed(() => {
     return props.milestones.map(m => {
         let tasks = m.tasks || [];
         
-        // Priority Filter
         if (selectedPriorityFilter.value !== 'all') {
             tasks = tasks.filter(t => (t.priority || 'high') === selectedPriorityFilter.value);
         }
 
-        // Search Filter
         if (taskSearchQuery.value.trim()) {
             const q = taskSearchQuery.value.toLowerCase().trim();
             tasks = tasks.filter(t => t.title.toLowerCase().includes(q));
@@ -245,12 +313,12 @@ const filteredMilestones = computed(() => {
 </script>
 
 <template>
-    <Head title="Lộ Trình & Ưu Tiên Công Việc Cưới — Eloria OS" />
+    <Head title="Lộ Trình & Mức Ưu Tiên — Eloria OS" />
 
     <WorkspaceLayout title="Lộ Trình & Mức Ưu Tiên" active-nav="timeline">
         <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
             
-            <!-- 1. Clear Guidance Header (Giao Diện Hướng Dẫn Kèm Ưu Tiên) -->
+            <!-- 1. Professional Guidance Header -->
             <div class="p-8 rounded-3xl bg-white border border-rose-100 shadow-xl shadow-rose-900/5 space-y-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
                     <div class="space-y-2">
@@ -261,7 +329,7 @@ const filteredMilestones = computed(() => {
                             {{ workspace?.groom_name && workspace?.bride_name ? `Lộ Trình Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : 'Kế Hoạch Chuẩn Bị Đám Cưới Trọn Gói' }}
                         </h1>
                         <p class="text-xs md:text-sm text-slate-600 font-medium">
-                            Mỗi công việc được tự động gắn mức độ ưu tiên (<span class="text-rose-700 font-bold">🔥 Gấp</span>, <span class="text-amber-800 font-bold">⚡ Cao</span>, <span class="text-blue-700 font-bold">📌 Trung Bình</span>) giúp bạn dễ dàng làm việc quan trọng nhất trước!
+                            Phân chia tự động mức độ ưu tiên chuẩn giúp dâu rể biết rõ cần phải tập trung xử lý việc gì trước!
                         </p>
                     </div>
 
@@ -279,28 +347,36 @@ const filteredMilestones = computed(() => {
                     </div>
                 </div>
 
-                <!-- Priority Status Indicators Banner -->
+                <!-- Professional Lucide Priority Status Indicators Banner -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-medium text-slate-700">
                     <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between">
-                        <span class="font-bold text-rose-900">🔥 Khẩn Cấp / Gấp</span>
-                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 font-black text-[11px]">Ưu tiên #1</span>
+                        <span class="font-bold text-rose-900 flex items-center gap-1.5">
+                            <Flame class="w-4 h-4 text-rose-600" /> Khẩn Cấp / Gấp
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 font-black text-[10px]">Ưu tiên #1</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between">
-                        <span class="font-bold text-amber-900">⚡ Ưu Tiên Cao</span>
-                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[11px]">Ưu tiên #2</span>
+                        <span class="font-bold text-amber-900 flex items-center gap-1.5">
+                            <Zap class="w-4 h-4 text-amber-600" /> Ưu Tiên Cao
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[10px]">Ưu tiên #2</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-between">
-                        <span class="font-bold text-blue-900">📌 Trung Bình</span>
-                        <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-950 font-black text-[11px]">Ưu tiên #3</span>
+                        <span class="font-bold text-blue-900 flex items-center gap-1.5">
+                            <Bookmark class="w-4 h-4 text-blue-600" /> Trung Bình
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-950 font-black text-[10px]">Ưu tiên #3</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between">
-                        <span class="font-bold text-slate-800">🌱 Thấp</span>
-                        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-900 font-black text-[11px]">Ưu tiên #4</span>
+                        <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                            <CircleDot class="w-4 h-4 text-slate-500" /> Thấp
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-900 font-black text-[10px]">Ưu tiên #4</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Focus Today Block: Top Priority Tasks (Việc Ưu Tiên Hàng Đầu) -->
+            <!-- 2. Focus Today Block: Clicking Opens Right Navigation Drawer Details -->
             <div class="p-6 rounded-3xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 text-white shadow-xl space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
@@ -309,33 +385,46 @@ const filteredMilestones = computed(() => {
                             🎯 Việc Ưu Tiên Cao Nhất Cần Làm Hôm Nay
                         </h2>
                     </div>
-                    <span class="text-xs text-rose-200 font-medium">Làm xong tới đâu tích chọn tới đó!</span>
+                    <span class="text-xs text-rose-200 font-medium">Click vào việc để xem chi tiết & cập nhật!</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div 
                         v-for="item in focusTodayTasks" 
                         :key="item.task.id"
-                        @click="toggleTask(item.task)"
-                        class="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition cursor-pointer flex items-center justify-between gap-3 text-xs"
+                        @click="openTaskDetail(item.task, item.milestoneTitle, item.timeframe)"
+                        class="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition cursor-pointer flex items-center justify-between gap-3 text-xs group"
                     >
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-5 h-5 rounded-full border border-rose-300 bg-white/10 flex items-center justify-center shrink-0">
+                            <!-- Checkbox button with stop propagation so user can toggle if they click directly on checkbox -->
+                            <button 
+                                @click.stop="toggleTask(item.task)"
+                                class="w-5 h-5 rounded-full border border-rose-300 bg-white/10 flex items-center justify-center shrink-0 hover:bg-rose-500 transition cursor-pointer"
+                            >
                                 <Check v-if="item.task.is_completed" class="w-3.5 h-3.5 text-rose-300 stroke-[3]" />
-                            </div>
+                            </button>
+
                             <div class="truncate">
-                                <div class="flex items-center gap-2 mb-0.5">
-                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-bold border uppercase" :class="getPriorityBadgeClass(item.task.priority)">
-                                        {{ getPriorityLabel(item.task.priority) }}
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(item.task.priority)">
+                                        <Flame v-if="item.task.priority === 'urgent'" class="w-3 h-3" />
+                                        <Zap v-else-if="item.task.priority === 'high'" class="w-3 h-3" />
+                                        <Bookmark v-else-if="item.task.priority === 'medium'" class="w-3 h-3" />
+                                        <CircleDot v-else class="w-3 h-3" />
+                                        <span>{{ getPriorityLabelText(item.task.priority) }}</span>
                                     </span>
                                 </div>
-                                <span class="font-bold text-white block truncate">{{ item.task.title }}</span>
+                                <span class="font-bold text-white block truncate group-hover:text-rose-200 transition">{{ item.task.title }}</span>
                                 <span class="text-[11px] text-rose-200/80">{{ item.timeframe }} • {{ item.milestoneTitle }}</span>
                             </div>
                         </div>
-                        <span v-if="item.task.estimated_cost" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/30 text-rose-100 border border-rose-400/30 shrink-0">
-                            {{ formatCurrency(item.task.estimated_cost) }}
-                        </span>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span v-if="item.task.estimated_cost" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/30 text-rose-100 border border-rose-400/30">
+                                {{ formatCurrency(item.task.estimated_cost) }}
+                            </span>
+                            <ChevronRight class="w-4 h-4 text-rose-300 group-hover:translate-x-0.5 transition" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -348,7 +437,7 @@ const filteredMilestones = computed(() => {
                     <span class="text-xs font-bold text-slate-700 shrink-0">Lọc Mức Ưu Tiên:</span>
                     <select v-model="selectedPriorityFilter" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-hidden">
                         <option value="all">Tất Cả Mức Ưu Tiên</option>
-                        <option value="urgent">🔥 Gấp / Khẩn Cấp</option>
+                        <option value="urgent">🔥 Khẩn Cấp / Gấp</option>
                         <option value="high">⚡ Ưu Tiên Cao</option>
                         <option value="medium">📌 Trung Bình</option>
                         <option value="low">🌱 Thấp</option>
@@ -367,7 +456,7 @@ const filteredMilestones = computed(() => {
                 </div>
             </div>
 
-            <!-- 4. Step-by-Step Milestone Stream with Priority Badges -->
+            <!-- 4. Step-by-Step Milestone Stream -->
             <div class="space-y-6">
                 <div 
                     v-for="(milestone, index) in filteredMilestones" 
@@ -402,40 +491,159 @@ const filteredMilestones = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Clean Task Checklist Section with Priority Badges -->
+                    <!-- Task List Items: Clicking row opens Right Navigation Drawer -->
                     <div class="p-6 space-y-2.5">
                         <div 
                             v-for="task in milestone.tasks" 
                             :key="task.id"
-                            @click="toggleTask(task)"
-                            class="p-3.5 rounded-2xl border transition flex items-center justify-between gap-4 text-xs cursor-pointer"
+                            @click="openTaskDetail(task, milestone.title, milestone.timeframe)"
+                            class="p-3.5 rounded-2xl border transition flex items-center justify-between gap-4 text-xs cursor-pointer group"
                             :class="task.is_completed ? 'border-emerald-200 bg-emerald-50/40 text-slate-400 line-through' : 'border-slate-200/80 bg-white hover:bg-rose-50/30 text-slate-800 font-medium'"
                         >
                             <div class="flex items-center gap-3 min-w-0">
-                                <div 
-                                    class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition"
-                                    :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'"
+                                <button 
+                                    @click.stop="toggleTask(task)"
+                                    class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition cursor-pointer"
+                                    :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white hover:border-rose-400'"
                                 >
                                     <Check v-if="task.is_completed" class="w-3.5 h-3.5 stroke-[3]" />
-                                </div>
-                                <span class="truncate text-xs font-bold">{{ task.title }}</span>
+                                </button>
+                                <span class="truncate text-xs font-bold group-hover:text-rose-900 transition">{{ task.title }}</span>
                             </div>
 
                             <div class="flex items-center gap-2.5 shrink-0">
                                 <!-- Priority Badge -->
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase" :class="getPriorityBadgeClass(task.priority)">
-                                    {{ getPriorityLabel(task.priority) }}
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(task.priority)">
+                                    <Flame v-if="task.priority === 'urgent'" class="w-3 h-3" />
+                                    <Zap v-else-if="task.priority === 'high'" class="w-3 h-3" />
+                                    <Bookmark v-else-if="task.priority === 'medium'" class="w-3 h-3" />
+                                    <CircleDot v-else class="w-3 h-3" />
+                                    <span>{{ getPriorityLabelText(task.priority) }}</span>
                                 </span>
 
                                 <span v-if="task.estimated_cost" class="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                                     {{ formatCurrency(task.estimated_cost) }}
                                 </span>
+
+                                <ChevronRight class="w-4 h-4 text-slate-400 group-hover:text-rose-600 transition" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- Right Navigation Drawer for Task Details (Right Navigation Details Slider) -->
+        <div v-if="selectedTaskDetail" class="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end" @click="closeTaskDetail">
+            <div class="w-full max-w-xl bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl overflow-y-auto" @click.stop>
+                <!-- Drawer Header -->
+                <div class="p-6 border-b border-slate-100 bg-white sticky top-0 flex items-center justify-between z-10">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(selectedTaskDetail.task.priority)">
+                                <Flame v-if="selectedTaskDetail.task.priority === 'urgent'" class="w-3 h-3" />
+                                <Zap v-else-if="selectedTaskDetail.task.priority === 'high'" class="w-3 h-3" />
+                                <Bookmark v-else-if="selectedTaskDetail.task.priority === 'medium'" class="w-3 h-3" />
+                                <CircleDot v-else class="w-3 h-3" />
+                                <span>{{ getPriorityLabelText(selectedTaskDetail.task.priority) }}</span>
+                            </span>
+                            <span class="text-xs font-bold text-rose-800">{{ selectedTaskDetail.timeframe }}</span>
+                        </div>
+                        <h2 class="text-lg font-serif font-bold text-slate-900 leading-snug">
+                            {{ selectedTaskDetail.task.title }}
+                        </h2>
+                    </div>
+                    <button @click="closeTaskDetail" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <!-- Drawer Content Form -->
+                <div class="p-6 space-y-6 flex-1 text-xs">
+                    <!-- Status Toggle Card -->
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 block text-xs">Trạng Thái Công Việc</span>
+                            <span class="text-[11px] text-slate-500">{{ selectedTaskDetail.task.is_completed ? 'Đã hoàn thành công việc này' : 'Chưa hoàn thành' }}</span>
+                        </div>
+                        <button 
+                            @click="toggleTask(selectedTaskDetail.task)"
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                            :class="selectedTaskDetail.task.is_completed ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-300 hover:border-rose-400'"
+                        >
+                            <Check v-if="selectedTaskDetail.task.is_completed" class="w-4 h-4" />
+                            <span>{{ selectedTaskDetail.task.is_completed ? 'Đã Hoàn Thành' : 'Đánh Dấu Xong' }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Budget Info -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-slate-700">Dự Chi Ban Đầu (VNĐ)</label>
+                            <input 
+                                :value="selectedTaskDetail.task.estimated_cost" 
+                                disabled 
+                                class="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700" 
+                            />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-slate-700">Thực Chi Cọc / Đã Trả (VNĐ)</label>
+                            <input 
+                                v-model.number="selectedTaskDetail.task.actual_cost" 
+                                type="number" 
+                                placeholder="0" 
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-rose-900 focus:bg-white focus:outline-hidden focus:border-rose-400" 
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Vendor Info -->
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-slate-700 flex items-center gap-1.5">
+                            <Store class="w-4 h-4 text-rose-600" /> Đối Tác Vendor / Đơn Vị Phụ Trách
+                        </label>
+                        <input 
+                            v-model="selectedTaskDetail.task.vendor_info" 
+                            type="text" 
+                            placeholder="VD: White Palace, TuArt Studio, Bliss Decor..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:border-rose-400" 
+                        />
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-slate-700 flex items-center gap-1.5">
+                            <FileText class="w-4 h-4 text-rose-600" /> Ghi Chú & Kế Hoạch Thực Hiện
+                        </label>
+                        <textarea 
+                            v-model="selectedTaskDetail.task.notes" 
+                            rows="4" 
+                            placeholder="Ghi chú thêm số điện thoại liên hệ, hợp đồng, cọc đợt 1..." 
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:border-rose-400"
+                        ></textarea>
+                    </div>
+
+                    <div v-if="saveSuccessMsg" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                        <CheckCircle2 class="w-4 h-4 text-emerald-600" /> Đã lưu thay đổi chi tiết công việc thành công!
+                    </div>
+                </div>
+
+                <!-- Drawer Footer Actions -->
+                <div class="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
+                    <button @click="closeTaskDetail" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100">
+                        Đóng lại
+                    </button>
+                    <button 
+                        @click="saveTaskDetails" 
+                        :disabled="isSavingTask"
+                        class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                        <Save class="w-4 h-4" />
+                        <span>{{ isSavingTask ? 'Đang lưu...' : 'Lưu Thay Đổi' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Task Add Modal with Priority Field -->
         <div v-if="showAddTaskModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
@@ -456,7 +664,7 @@ const filteredMilestones = computed(() => {
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Mức Độ Ưu Tiên *</label>
                         <select v-model="newTaskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden">
-                            <option value="urgent">🔥 Gấp / Khẩn Cấp (Xử lý ngay)</option>
+                            <option value="urgent">🔥 Khẩn Cấp / Gấp (Xử lý ngay)</option>
                             <option value="high">⚡ Ưu Tiên Cao (Quan trọng)</option>
                             <option value="medium">📌 Trung Bình (Theo tiến độ)</option>
                             <option value="low">🌱 Thấp (Tham khảo)</option>
@@ -484,14 +692,14 @@ const filteredMilestones = computed(() => {
         </div>
 
         <!-- Milestone Detail Drawer -->
-        <div v-if="selectedMilestone" class="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end" @click="closeDetail">
+        <div v-if="selectedMilestone" class="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end" @click="closeMilestoneDetail">
             <div class="w-full max-w-xl bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl overflow-y-auto" @click.stop>
                 <div class="p-6 border-b border-slate-100 bg-white sticky top-0 flex items-center justify-between z-10">
                     <div>
                         <span class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">{{ selectedMilestone.timeframe }}</span>
                         <h2 class="text-lg font-serif font-bold text-slate-900">{{ selectedMilestone.title }}</h2>
                     </div>
-                    <button @click="closeDetail" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                    <button @click="closeMilestoneDetail" class="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
                         <X class="w-5 h-5" />
                     </button>
                 </div>
@@ -505,16 +713,25 @@ const filteredMilestones = computed(() => {
                     <div class="space-y-3">
                         <h4 class="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Danh Sách Công Việc Kèm Ưu Tiên</h4>
                         <div class="space-y-2">
-                            <div v-for="task in selectedMilestone.tasks" :key="task.id" class="p-3.5 rounded-2xl border border-slate-200/80 bg-white flex items-center justify-between gap-3 shadow-2xs">
+                            <div 
+                                v-for="task in selectedMilestone.tasks" 
+                                :key="task.id" 
+                                @click="openTaskDetail(task, selectedMilestone.title, selectedMilestone.timeframe)"
+                                class="p-3.5 rounded-2xl border border-slate-200/80 bg-white flex items-center justify-between gap-3 shadow-2xs hover:border-rose-300 transition cursor-pointer"
+                            >
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <button @click.stop="toggleTask(task)" class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0" :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'">
+                                    <button @click.stop="toggleTask(task)" class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0 cursor-pointer" :class="task.is_completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'">
                                         <Check v-if="task.is_completed" class="w-3.5 h-3.5 stroke-[3]" />
                                     </button>
                                     <span class="text-xs font-bold text-slate-900 truncate" :class="{ 'line-through text-slate-400': task.is_completed }">{{ task.title }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold border uppercase" :class="getPriorityBadgeClass(task.priority)">
-                                        {{ getPriorityLabel(task.priority) }}
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(task.priority)">
+                                        <Flame v-if="task.priority === 'urgent'" class="w-3 h-3" />
+                                        <Zap v-else-if="task.priority === 'high'" class="w-3 h-3" />
+                                        <Bookmark v-else-if="task.priority === 'medium'" class="w-3 h-3" />
+                                        <CircleDot v-else class="w-3 h-3" />
+                                        <span>{{ getPriorityLabelText(task.priority) }}</span>
                                     </span>
                                     <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
                                         {{ formatCurrency(task.estimated_cost) }}
