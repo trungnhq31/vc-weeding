@@ -30,7 +30,8 @@ import {
     FileText,
     Store,
     Save,
-    ExternalLink
+    ExternalLink,
+    Heart
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
@@ -106,7 +107,7 @@ const props = defineProps<{
 const isAiDrawerOpen = ref(false);
 const selectedMilestone = ref<Milestone | null>(null);
 
-// Collapsible State Map for Milestone Cards (Default: Step 1 expanded, others collapsed for neat UI)
+// Collapsible State Map for Milestone Cards
 const collapsedState = ref<Record<string, boolean>>({});
 
 const toggleMilestoneCollapse = (milestoneId: string) => {
@@ -117,11 +118,10 @@ const isMilestoneCollapsed = (milestoneId: string, index: number) => {
     if (collapsedState.value[milestoneId] !== undefined) {
         return collapsedState.value[milestoneId];
     }
-    // By default, expand first step (index 0), collapse step 2..N
     return index > 0;
 };
 
-// Dedicated Right Drawer for Selected Task Detail
+// Right Drawer for Selected Task Detail
 const selectedTaskDetail = ref<{
     task: Task;
     milestoneTitle?: string;
@@ -245,7 +245,7 @@ const handleAddTask = () => {
     showAddTaskModal.value = false;
 };
 
-// Priority Helpers with Lucide Professional Badges
+// Priority Helpers
 const getPriorityBadgeClass = (priority?: string) => {
     switch (priority) {
         case 'urgent':
@@ -285,7 +285,7 @@ const daysUntilWedding = computed(() => {
     return diff > 0 ? diff : 0;
 });
 
-// Focus Today Tasks Sorted by Priority Rank
+// Focus Today Tasks
 const focusTodayTasks = computed(() => {
     const allPending: { task: Task; milestoneTitle: string; timeframe: string }[] = [];
     props.milestones.forEach(m => {
@@ -302,7 +302,7 @@ const focusTodayTasks = computed(() => {
     return allPending.slice(0, 4);
 });
 
-// Filtered Milestones & Tasks based on Search & Priority Filter
+// Filtered Milestones
 const filteredMilestones = computed(() => {
     return props.milestones.map(m => {
         let tasks = m.tasks || [];
@@ -333,16 +333,33 @@ const filteredMilestones = computed(() => {
     <WorkspaceLayout title="Lộ Trình & Mức Ưu Tiên" active-nav="timeline">
         <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
             
-            <!-- 1. Professional Neutral Guidance Header -->
+            <!-- 1. Header with Clearly Separated Groom & Bride Name Badges -->
             <div class="p-8 rounded-3xl bg-white border border-rose-100 shadow-xl shadow-rose-900/5 space-y-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-900 text-[11px] font-extrabold uppercase tracking-wider">
                             <Target class="w-3.5 h-3.5 text-rose-600" /> BẢN ĐỒ LỘ TRÌNH KÈM MỨC ƯU TIÊN
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">
-                            {{ workspace?.groom_name && workspace?.bride_name ? `Lộ Trình Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : 'Kế Hoạch Chuẩn Bị Đám Cưới Trọn Gói' }}
-                        </h1>
+
+                        <!-- Groom & Bride Separated Badges Title -->
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">Lộ Trình Đám Cưới</h1>
+                            
+                            <div class="inline-flex items-center gap-2 p-1.5 px-3 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200/80 shadow-2xs">
+                                <div class="px-2.5 py-1 rounded-xl bg-rose-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
+                                    <span>🤵 Chú Rể:</span>
+                                    <strong class="font-black">{{ workspace?.groom_name || 'Nguyễn Hoàng Quốc Trung' }}</strong>
+                                </div>
+                                
+                                <Heart class="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse shrink-0" />
+                                
+                                <div class="px-2.5 py-1 rounded-xl bg-pink-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
+                                    <span>👰 Cô Dâu:</span>
+                                    <strong class="font-black">{{ workspace?.bride_name || 'Lê Thị Hồng Vân' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
                         <p class="text-xs md:text-sm text-slate-600 font-medium">
                             Phân chia tự động mức độ ưu tiên công việc giúp dâu rể theo dõi và triển khai theo từng mốc thời gian.
                         </p>
@@ -362,7 +379,7 @@ const filteredMilestones = computed(() => {
                     </div>
                 </div>
 
-                <!-- Professional Lucide Priority Status Indicators Banner -->
+                <!-- Priority Status Indicators Banner -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-medium text-slate-700">
                     <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between">
                         <span class="font-bold text-rose-900 flex items-center gap-1.5">
@@ -391,7 +408,7 @@ const filteredMilestones = computed(() => {
                 </div>
             </div>
 
-            <!-- 2. Focus Today Block: Clicking Opens Right Navigation Drawer Details -->
+            <!-- 2. Focus Today Block -->
             <div class="p-6 rounded-3xl bg-gradient-to-r from-rose-900 via-slate-900 to-rose-950 text-white shadow-xl space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
@@ -445,7 +462,6 @@ const filteredMilestones = computed(() => {
 
             <!-- 3. Filters & Search Bar -->
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-rose-100 shadow-2xs">
-                <!-- Priority Filter Switcher -->
                 <div class="flex items-center gap-2 w-full sm:w-auto">
                     <Filter class="w-4 h-4 text-rose-600 shrink-0" />
                     <span class="text-xs font-bold text-slate-700 shrink-0">Lọc Mức Ưu Tiên:</span>
@@ -458,7 +474,6 @@ const filteredMilestones = computed(() => {
                     </select>
                 </div>
 
-                <!-- Search Input -->
                 <div class="relative w-full sm:w-64">
                     <Search class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
@@ -470,14 +485,14 @@ const filteredMilestones = computed(() => {
                 </div>
             </div>
 
-            <!-- 4. Collapsible Step-by-Step Milestone Accordions (Thu gọn/mở rộng từng bước) -->
+            <!-- 4. Collapsible Step-by-Step Milestone Accordions -->
             <div class="space-y-4">
                 <div 
                     v-for="(milestone, index) in filteredMilestones" 
                     :key="milestone.id"
                     class="bg-white rounded-3xl border border-rose-100 shadow-md shadow-rose-900/5 overflow-hidden transition-all hover:border-rose-200"
                 >
-                    <!-- Milestone Collapsible Header Bar -->
+                    <!-- Milestone Header -->
                     <div 
                         @click="toggleMilestoneCollapse(milestone.id)"
                         class="p-6 bg-gradient-to-r from-rose-50/50 via-white to-amber-50/30 border-b border-rose-100/80 flex items-center justify-between gap-4 cursor-pointer select-none group"
@@ -509,7 +524,6 @@ const filteredMilestones = computed(() => {
                                 Tóm Tắt
                             </button>
 
-                            <!-- Collapse / Expand Icon Indicator -->
                             <div class="w-8 h-8 rounded-full bg-rose-50 group-hover:bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-700 transition">
                                 <ChevronUp v-if="!isMilestoneCollapsed(milestone.id, index)" class="w-4 h-4" />
                                 <ChevronDown v-else class="w-4 h-4" />
@@ -541,7 +555,6 @@ const filteredMilestones = computed(() => {
                             </div>
 
                             <div class="flex items-center gap-2.5 shrink-0">
-                                <!-- Priority Badge -->
                                 <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(task.priority)">
                                     <Flame v-if="task.priority === 'urgent'" class="w-3 h-3" />
                                     <Zap v-else-if="task.priority === 'high'" class="w-3 h-3" />
