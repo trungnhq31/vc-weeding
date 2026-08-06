@@ -4,27 +4,67 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\ExportWeddingPlanExcelAction;
+use App\Http\Requests\StoreBudgetItemRequest;
+use App\Http\Requests\StoreGuestRequest;
+use App\Http\Requests\UpdateWorkspaceSettingsRequest;
 use App\Models\Guest;
 use App\Models\WeddingMemory;
 use App\Models\Wish;
+use App\Modules\Budget\Actions\CreateBudgetItemAction;
+use App\Modules\Budget\Actions\DeleteBudgetItemAction;
+use App\Modules\Budget\Actions\RecordPaymentAction;
+use App\Modules\Budget\Models\BudgetItem;
+use App\Modules\Budget\Services\CashFlowCalculatorService;
+use App\Modules\Guest\Actions\CreateGuestAction;
+use App\Modules\Guest\Actions\CreateTableAction;
+use App\Modules\Guest\Actions\DeleteGuestAction;
+use App\Modules\Guest\Actions\UpdateGuestAction;
+use App\Modules\Guest\Models\Table;
+use App\Modules\Workspace\Actions\UpdateWorkspaceSettingsAction;
 use App\Modules\Workspace\Models\Workspace;
-use App\Modules\Budget\Actions\ExportBudgetAction;
-use App\Modules\Guest\Actions\ExportGuestListAction;
-use App\Modules\Invitation\Actions\UpdateInvitationCmsAction;
-use App\Modules\Invitation\Models\InvitationTemplate;
-use App\Modules\Invitation\Models\WorkspaceInvitation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class WeddingController extends Controller
 {
-    public function index(?string $templateSlug = 'romantic-pastel'): Response
+    public function __construct(
+        protected CashFlowCalculatorService $cashFlowCalculator = new CashFlowCalculatorService
+    ) {}
+
+    protected function getActiveWorkspaceId(Request $request): string
     {
+        $workspaceId = $request->input('workspace_id')
+            ?? session()->get('active_workspace_id');
+
+        if (! $workspaceId) {
+            $workspace = Workspace::latest()->first();
+            if (! $workspace) {
+                $workspace = Workspace::create([
+                    'name' => 'Đám Cưới Nguyễn Hoàng Quốc Trung & Lê Thị Hồng Vân',
+                    'slug' => 'quoc-trung-hong-van',
+                    'groom_name' => 'Nguyễn Hoàng Quốc Trung',
+                    'bride_name' => 'Lê Thị Hồng Vân',
+                    'wedding_date' => '2026-10-24',
+                    'budget_cap' => 350000000.00,
+                ]);
+            }
+            $workspaceId = $workspace->id;
+            session()->put('active_workspace_id', $workspaceId);
+        }
+
+        return (string) $workspaceId;
+    }
+
+    public function index(Request $request): Response
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+
         $wishes = Wish::where('is_approved', true)
             ->latest()
             ->take(20)
@@ -35,10 +75,11 @@ class WeddingController extends Controller
             ->get();
 
         return Inertia::render('Wedding/Index', [
-            'templateSlug' => $templateSlug ?? 'romantic-pastel',
+            'templateSlug' => 'romantic-pastel',
             'wishes' => $wishes,
             'memories' => $memories,
             'guest' => null,
+            'workspace' => Workspace::find($workspaceId),
         ]);
     }
 
@@ -95,214 +136,197 @@ class WeddingController extends Controller
         ]);
     }
 
-    public function budget(\App\Services\WeddingBudgetAllocationService $allocationService): Response
+    public function budget(Request $request): Response
     {
-        $workspace = Workspace::latest()->first();
-        $budgetCap = (float) ($workspace->budget_cap ?? 250000000.00);
-        $guests = (int) ($workspace->estimated_guests ?? 200);
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
 
-        $breakdown = $allocationService->calculateStandardBreakdown($budgetCap, $guests);
-        $recommendedVenues = $allocationService->getRecommendedVenues($budgetCap, $guests, $workspace->wedding_location ?? 'TP. Hồ Chí Minh');
+        $budgetItems = BudgetItem::forWorkspace($workspaceId)
+            ->latest()
+            ->get();
+
+        $summary = $this->cashFlowCalculator->calculateOverview($workspaceId);
 
         return Inertia::render('Wedding/Budget', [
             'workspace' => $workspace,
-            'budgetBreakdown' => $breakdown,
-            'recommendedVenues' => $recommendedVenues,
+            'budgetItems' => $budgetItems,
+            'summary' => $summary,
         ]);
     }
 
-    public function selectVenue(Request $request, \App\Services\WeddingBudgetAllocationService $allocationService): JsonResponse
+    public function storeBudgetItem(StoreBudgetItemRequest $request, CreateBudgetItemAction $action): JsonResponse
     {
-        $validated = $request->validate([
-            'venue_name' => 'required|string|max:255',
-            'deposit_amount' => 'nullable|numeric|min:0',
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $item = $action->execute(array_merge($request->validated(), [
+            'workspace_id' => $workspaceId,
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'budgetItem' => $item,
+            'summary' => $this->cashFlowCalculator->calculateOverview($workspaceId),
         ]);
-
-        $result = $allocationService->selectVenue(
-            $validated['venue_name'],
-            (float) ($validated['deposit_amount'] ?? 35000000.00)
-        );
-
-        return response()->json($result);
     }
 
-    public function guests(): Response
+    public function recordBudgetPayment(Request $request, string $itemId, RecordPaymentAction $action): JsonResponse
     {
-        $workspace = Workspace::latest()->first();
-        if (! $workspace) {
-            $workspace = Workspace::create([
-                'name' => 'Đám Cưới Quốc Trung & Hồng Vân',
-                'slug' => 'quoc-trung-hong-van-'.Str::random(5),
-                'groom_name' => 'Nguyễn Hoàng Quốc Trung',
-                'bride_name' => 'Lê Thị Hồng Vân',
-                'budget_cap' => 250000000.00,
-                'estimated_guests' => 200,
-                'wedding_date' => '2026-10-24',
-                'wedding_location' => 'TP. Hồ Chí Minh',
-            ]);
-        }
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $validated = $request->validate(['amount' => 'required|numeric|min:0.01']);
 
-        if (Guest::where('workspace_id', $workspace->id)->count() === 0) {
-            $samples = [
-                ['name' => 'Nguyễn Văn Anh', 'group' => 'Nhà Trai', 'phone' => '0901234567', 'table_name' => 'Bàn VIP 1 (Họ Hàng)', 'dietary_preference' => 'Không cay', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Chú rể'],
-                ['name' => 'Trần Thị Bích', 'group' => 'Nhà Gái', 'phone' => '0909876543', 'table_name' => 'Bàn VIP 1 (Họ Hàng)', 'dietary_preference' => 'Bình thường', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Cô dâu'],
-                ['name' => 'Lê Hoàng Nam', 'group' => 'Bạn Chú Rể', 'phone' => '0912345678', 'table_name' => 'Bàn Bạn Học 1', 'dietary_preference' => 'Ăn chay', 'rsvp_status' => 'attending', 'notes' => 'Thêm bởi: Bạn học'],
-                ['name' => 'Phạm Minh Tâm', 'group' => 'Đồng Nghiệp', 'phone' => '0987654321', 'table_name' => 'Bàn Công Ty', 'dietary_preference' => 'Bình thường', 'rsvp_status' => 'pending', 'notes' => 'Thêm bởi: Bạn đồng nghiệp'],
-                ['name' => 'Đặng Tuấn Kiệt', 'group' => 'Họ Hàng Dâu', 'phone' => '0933445566', 'table_name' => 'Chưa xếp', 'dietary_preference' => '-', 'rsvp_status' => 'attending', 'notes' => 'Thêm qua Share Link: Mẹ Cô Dâu'],
-                ['name' => 'Vũ Quốc Huy', 'group' => 'Bạn Chú Rể', 'phone' => '0977889900', 'table_name' => 'Chưa xếp', 'dietary_preference' => 'Ăn chay', 'rsvp_status' => 'attending', 'notes' => 'Thêm qua Share Link: Phù rể'],
-            ];
+        $item = $action->execute($itemId, (float) $validated['amount']);
 
-            foreach ($samples as $s) {
-                Guest::create([
-                    'workspace_id' => $workspace->id,
-                    'name' => $s['name'],
-                    'group' => $s['group'],
-                    'phone' => $s['phone'],
-                    'table_name' => $s['table_name'],
-                    'dietary_preference' => $s['dietary_preference'],
-                    'rsvp_status' => $s['rsvp_status'],
-                    'notes' => $s['notes'],
-                    'guest_slug' => Str::slug($s['name']).'-'.Str::random(4),
-                ]);
-            }
-        }
+        return response()->json([
+            'success' => true,
+            'budgetItem' => $item,
+            'summary' => $this->cashFlowCalculator->calculateOverview($workspaceId),
+        ]);
+    }
 
-        $guests = Guest::where('workspace_id', $workspace->id)->latest()->get();
-        $shareUrl = url('/wedding/share-guest-list/'.($workspace->slug ?? 'quoc-trung-hong-van'));
+    public function deleteBudgetItem(Request $request, string $itemId, DeleteBudgetItemAction $action): JsonResponse
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $success = $action->execute($itemId);
+
+        return response()->json([
+            'success' => $success,
+            'summary' => $this->cashFlowCalculator->calculateOverview($workspaceId),
+        ]);
+    }
+
+    public function guests(Request $request): Response
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
+
+        $guests = Guest::forWorkspace($workspaceId)
+            ->latest()
+            ->get();
+
+        $tables = Table::forWorkspace($workspaceId)
+            ->get();
 
         return Inertia::render('Wedding/Guests', [
             'workspace' => $workspace,
-            'dbGuests' => $guests,
-            'shareUrl' => $shareUrl,
+            'guests' => $guests,
+            'tables' => $tables,
         ]);
     }
 
-    public function showSharedGuestList(string $token): Response
+    public function storeGuest(StoreGuestRequest $request, CreateGuestAction $action): JsonResponse
     {
-        $workspace = Workspace::where('slug', $token)->first() ?? Workspace::latest()->first();
-        $recentGuests = Guest::where('workspace_id', $workspace->id ?? null)->latest()->take(10)->get();
-
-        return Inertia::render('Wedding/SharedGuestList', [
-            'workspace' => $workspace,
-            'recentGuests' => $recentGuests,
-            'shareToken' => $token,
-        ]);
-    }
-
-    public function storeSharedGuest(Request $request, string $token): JsonResponse
-    {
-        $workspace = Workspace::where('slug', $token)->first() ?? Workspace::latest()->first();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'group' => 'required|string|max:255',
-            'added_by' => 'nullable|string|max:255',
-            'dietary_preference' => 'nullable|string|max:255',
-            'estimated_count' => 'nullable|integer|min:1',
-        ]);
-
-        $addedByText = $validated['added_by'] ? "Thêm qua Share Link bởi: {$validated['added_by']}" : 'Thêm qua Share Link người thân';
-
-        $guest = Guest::create([
-            'workspace_id' => $workspace->id,
-            'name' => $validated['name'],
-            'phone' => $validated['phone'] ?? null,
-            'group' => $validated['group'],
-            'dietary_preference' => $validated['dietary_preference'] ?? '-',
-            'estimated_count' => $validated['estimated_count'] ?? 1,
-            'rsvp_status' => 'attending',
-            'table_name' => 'Chưa xếp',
-            'notes' => $addedByText,
-            'guest_slug' => Str::slug($validated['name']).'-'.Str::random(4),
-        ]);
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $guest = $action->execute(array_merge($request->validated(), [
+            'workspace_id' => $workspaceId,
+        ]));
 
         return response()->json([
             'success' => true,
-            'message' => "Cảm ơn! Đã thêm khách mời [{$guest->name}] vào danh sách đám cưới thành công.",
             'guest' => $guest,
         ]);
     }
 
-    public function quickStoreGuest(Request $request): JsonResponse
+    public function updateGuest(Request $request, string $guestId, UpdateGuestAction $action): JsonResponse
     {
-        $workspace = Workspace::latest()->first();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'group' => 'nullable|string|max:255',
-            'dietary_preference' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:255',
-        ]);
-
-        $guest = Guest::create([
-            'workspace_id' => $workspace->id,
-            'name' => $validated['name'],
-            'phone' => $validated['phone'] ?? null,
-            'group' => $validated['group'] ?? 'Nhà Trai',
-            'dietary_preference' => $validated['dietary_preference'] ?? '-',
-            'rsvp_status' => 'attending',
-            'table_name' => 'Chưa xếp',
-            'notes' => $validated['notes'] ?? 'Thêm nhanh từ Workspace',
-            'guest_slug' => Str::slug($validated['name']).'-'.Str::random(4),
-        ]);
+        $guest = $action->execute($guestId, $request->all());
 
         return response()->json([
             'success' => true,
-            'message' => "Đã thêm nhanh khách mời [{$guest->name}]!",
             'guest' => $guest,
         ]);
     }
 
-    public function invitationEditor(): Response
+    public function deleteGuest(string $guestId, DeleteGuestAction $action): JsonResponse
     {
-        $workspace = Workspace::first();
-        $invitation = WorkspaceInvitation::with('template')
-            ->where('workspace_id', $workspace->id ?? null)
-            ->first();
-        $templates = InvitationTemplate::all();
+        $success = $action->execute($guestId);
+
+        return response()->json([
+            'success' => $success,
+        ]);
+    }
+
+    public function storeTable(Request $request, CreateTableAction $action): JsonResponse
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'capacity' => 'nullable|integer|min:1',
+            'shape' => 'nullable|string|max:50',
+            'zone' => 'nullable|string|max:100',
+        ]);
+
+        $table = $action->execute(array_merge($validated, [
+            'workspace_id' => $workspaceId,
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'table' => $table,
+        ]);
+    }
+
+    public function invitationEditor(Request $request): Response
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
 
         return Inertia::render('Wedding/InvitationEditor', [
             'workspace' => $workspace,
-            'invitation' => $invitation,
-            'templates' => $templates,
         ]);
     }
 
-    public function saveInvitationCms(Request $request, UpdateInvitationCmsAction $action): JsonResponse
+    public function settings(Request $request): Response
     {
-        $workspace = Workspace::first();
-        $updatedInvitation = $action->execute((string) $workspace->id, $request->all());
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
+
+        return Inertia::render('Wedding/Settings', [
+            'workspace' => $workspace,
+        ]);
+    }
+
+    public function updateSettings(UpdateWorkspaceSettingsRequest $request, UpdateWorkspaceSettingsAction $action): JsonResponse
+    {
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = $action->execute($workspaceId, $request->validated());
 
         return response()->json([
             'success' => true,
-            'message' => 'Đã lưu thay đổi CMS thiệp cưới thành công!',
-            'invitation' => $updatedInvitation,
+            'workspace' => $workspace,
         ]);
     }
 
-    public function settings(): Response
+    public function documents(Request $request): Response
     {
-        return Inertia::render('Wedding/Settings');
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
+
+        return Inertia::render('Wedding/Documents', [
+            'workspace' => $workspace,
+        ]);
     }
 
-    public function documents(): Response
+    public function visualizer(Request $request): Response
     {
-        return Inertia::render('Wedding/Documents');
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $workspace = Workspace::find($workspaceId);
+
+        $tables = Table::forWorkspace($workspaceId)->get();
+
+        return Inertia::render('Wedding/Visualizer', [
+            'workspace' => $workspace,
+            'tables' => $tables,
+        ]);
     }
 
-    public function exportGuests(ExportGuestListAction $action): StreamedResponse
+    public function exportExcel(Request $request, ExportWeddingPlanExcelAction $action): BinaryFileResponse
     {
-        $workspace = Workspace::first();
+        $workspaceId = $this->getActiveWorkspaceId($request);
+        $filePath = $action->execute($workspaceId);
 
-        return $action->execute((string) ($workspace->id ?? 1));
-    }
+        $filename = 'Eloria_Wedding_Plan_'.date('Y_m_d').'.xlsx';
 
-    public function exportBudget(ExportBudgetAction $action): StreamedResponse
-    {
-        $workspace = Workspace::first();
-
-        return $action->execute((string) ($workspace->id ?? 1));
+        return response()->download($filePath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 }
