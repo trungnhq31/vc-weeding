@@ -15,6 +15,7 @@ class WeddingMilestone extends Model
     use HasFactory, HasUlids;
 
     protected $fillable = [
+        'workspace_id',
         'title',
         'slug',
         'timeframe',

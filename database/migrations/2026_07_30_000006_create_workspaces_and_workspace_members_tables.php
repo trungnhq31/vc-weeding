@@ -26,6 +26,9 @@ return new class extends Migration
             $table->string('wedding_hashtag')->nullable()->default('#TrungVanWedding2026');
             $table->text('couple_story')->nullable();
             $table->decimal('budget_cap', 12, 2)->default(350000000);
+            $table->string('ceremony_type')->default('traditional_south'); // traditional_south, traditional_north, catholic_church, destination_outdoor, hotel_luxury
+            $table->string('wedding_vibe')->default('pastel'); // pastel, royal_gold, botanical, minimalist
+            $table->string('region')->default('hcm'); // hcm, hanoi, danang, western, destination
             $table->string('currency')->default('VND');
             $table->timestamps();
         });

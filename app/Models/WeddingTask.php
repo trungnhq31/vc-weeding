@@ -14,8 +14,10 @@ class WeddingTask extends Model
     use HasFactory, HasUlids;
 
     protected $fillable = [
+        'workspace_id',
         'milestone_id',
         'title',
+        'priority',
         'notes',
         'vendor_info',
         'attachments',

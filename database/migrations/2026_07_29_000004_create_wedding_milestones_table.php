@@ -30,6 +30,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('milestone_id')->constrained('wedding_milestones')->cascadeOnDelete();
             $table->string('title');
+            $table->string('priority')->default('medium');
             $table->text('notes')->nullable();
             $table->string('vendor_info')->nullable();
             $table->json('attachments')->nullable();
