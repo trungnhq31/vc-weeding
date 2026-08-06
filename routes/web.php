@@ -5,11 +5,13 @@ declare(strict_types=1);
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\GiftLogController;
 use App\Http\Controllers\GroundedAiController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\RsvpController;
+use App\Http\Controllers\RunOfShowController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WeddingController;
@@ -51,6 +53,18 @@ $weddingRoutes = function () {
     Route::post('/tasks/{task}/execute-action', [WeddingTimelineController::class, 'executeTaskAction'])->name('wedding.tasks.execute_action');
     Route::get('/tasks/{task}/ai-recommendation', [WeddingTimelineController::class, 'getTaskAiRecommendation'])->name('wedding.tasks.ai_recommendation');
     Route::post('/milestones/{milestone}/auto-complete-ai', [WeddingTimelineController::class, 'autoCompleteMilestoneAi'])->name('wedding.milestones.auto_complete_ai');
+
+    // Run-of-Show Wedding Day Timeline & PIC Assignment
+    Route::get('/run-of-show', [RunOfShowController::class, 'index'])->name('wedding.run_of_show.index');
+    Route::post('/run-of-show', [RunOfShowController::class, 'store'])->name('wedding.run_of_show.store');
+    Route::post('/run-of-show/{id}/toggle', [RunOfShowController::class, 'toggle'])->name('wedding.run_of_show.toggle');
+    Route::delete('/run-of-show/{id}', [RunOfShowController::class, 'destroy'])->name('wedding.run_of_show.delete');
+
+    // Sổ Vàng Mừng Cưới & VietQR Gift Management
+    Route::get('/gift-log', [GiftLogController::class, 'index'])->name('wedding.gift_log.index');
+    Route::post('/gift-log', [GiftLogController::class, 'store'])->name('wedding.gift_log.store');
+    Route::post('/gift-log/{id}/thank-you', [GiftLogController::class, 'toggleThankYou'])->name('wedding.gift_log.thank_you');
+    Route::delete('/gift-log/{id}', [GiftLogController::class, 'destroy'])->name('wedding.gift_log.delete');
 
     // Online Wedding Photo & Video Gallery Manager
     Route::get('/gallery', [GalleryController::class, 'index'])->name('wedding.gallery.index');

@@ -23,7 +23,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PanelLeft,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Clock as ClockIcon,
+  Gift as GiftIcon
 } from 'lucide-vue-next';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
 import CommandPaletteModal from '@/Components/Wedding/CommandPaletteModal.vue';
@@ -45,7 +47,9 @@ const toggleSidebar = () => {
 
 const navigationItems = [
   { id: 'timeline', label: 'Lộ trình & Task', href: '/wedding/timeline', icon: Calendar },
+  { id: 'run-of-show', label: 'Kịch Bản Ngày Cưới', href: '/wedding/run-of-show', icon: ClockIcon },
   { id: 'budget', label: 'Ngân sách thu chi', href: '/wedding/budget', icon: DollarSign },
+  { id: 'gift-log', label: 'Sổ Vàng Mừng Cưới', href: '/wedding/gift-log', icon: GiftIcon },
   { id: 'guests', label: 'Khách mời & Sơ đồ bàn', href: '/wedding/guests', icon: Users },
   { id: 'gallery', label: 'Album & Gallery Online', href: '/wedding/gallery', icon: ImageIcon },
   { id: 'invitation-editor', label: 'Tùy biến Thiệp cưới', href: '/wedding/invitation-editor', icon: Palette },
