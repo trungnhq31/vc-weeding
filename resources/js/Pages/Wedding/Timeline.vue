@@ -9,29 +9,14 @@ import {
     Plus, 
     AlertTriangle, 
     Sparkles, 
-    Calendar, 
     Search, 
     Clock, 
-    MapPin, 
-    Users, 
-    CheckCircle2, 
     ListTodo, 
     Target, 
-    ArrowRight,
-    HelpCircle,
-    Flame,
-    Zap,
-    Bookmark,
-    CircleDot,
     Filter,
-    Coins,
-    DollarSign,
-    Building2,
     FileText,
     Store,
-    Save,
-    ExternalLink,
-    Heart
+    Save
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import GroundedAiDrawer from '@/Components/Wedding/GroundedAiDrawer.vue';
@@ -245,7 +230,7 @@ const handleAddTask = () => {
     showAddTaskModal.value = false;
 };
 
-// Priority Helpers
+// Priority Helpers - Clean Text Without Icons
 const getPriorityBadgeClass = (priority?: string) => {
     switch (priority) {
         case 'urgent':
@@ -328,34 +313,36 @@ const filteredMilestones = computed(() => {
 </script>
 
 <template>
-    <Head title="Lộ Trình & Mức Ưu Tiên — Eloria OS" />
+    <Head title="Lộ Trình Chuẩn Bị Đám Cưới — Eloria OS" />
 
-    <WorkspaceLayout title="Lộ Trình & Mức Ưu Tiên" active-nav="timeline">
+    <WorkspaceLayout title="Lộ Trình Chuẩn Bị Đám Cưới" active-nav="timeline">
         <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
             
-            <!-- 1. Header with Clearly Separated Groom & Bride Name Badges -->
+            <!-- 1. Header with Ultra-Clear Groom & Bride Separation (No Icons, Crisp Badges) -->
             <div class="p-8 rounded-3xl bg-white border border-rose-100 shadow-xl shadow-rose-900/5 space-y-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
-                    <div class="space-y-3">
+                    <div class="space-y-4">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-900 text-[11px] font-extrabold uppercase tracking-wider">
-                            <Target class="w-3.5 h-3.5 text-rose-600" /> BẢN ĐỒ LỘ TRÌNH KÈM MỨC ƯU TIÊN
+                            BẢN ĐỒ LỘ TRÌNH KÈM MỨC ƯU TIÊN
                         </div>
 
-                        <!-- Groom & Bride Separated Badges Title -->
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">Lộ Trình Đám Cưới</h1>
+                        <!-- Groom & Bride Separated Title Block -->
+                        <div class="space-y-2">
+                            <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900">
+                                Lộ Trình Chuẩn Bị Đám Cưới
+                            </h1>
                             
-                            <div class="inline-flex items-center gap-2 p-1.5 px-3 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200/80 shadow-2xs">
-                                <div class="px-2.5 py-1 rounded-xl bg-rose-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
-                                    <span>🤵 Chú Rể:</span>
-                                    <strong class="font-black">{{ workspace?.groom_name || 'Nguyễn Hoàng Quốc Trung' }}</strong>
+                            <div class="flex items-center gap-3 flex-wrap pt-1">
+                                <div class="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold flex items-center gap-2">
+                                    <span class="text-rose-700 font-extrabold uppercase text-[10px] tracking-wider">Chú Rể:</span>
+                                    <span class="text-slate-900 font-bold">{{ workspace?.groom_name || 'Nguyễn Hoàng Quốc Trung' }}</span>
                                 </div>
-                                
-                                <Heart class="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse shrink-0" />
-                                
-                                <div class="px-2.5 py-1 rounded-xl bg-pink-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-2xs">
-                                    <span>👰 Cô Dâu:</span>
-                                    <strong class="font-black">{{ workspace?.bride_name || 'Lê Thị Hồng Vân' }}</strong>
+
+                                <span class="text-slate-300 font-bold">&</span>
+
+                                <div class="px-3 py-1.5 rounded-xl bg-pink-50 border border-pink-200 text-xs font-bold flex items-center gap-2">
+                                    <span class="text-pink-700 font-extrabold uppercase text-[10px] tracking-wider">Cô Dâu:</span>
+                                    <span class="text-slate-900 font-bold">{{ workspace?.bride_name || 'Lê Thị Hồng Vân' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -379,31 +366,23 @@ const filteredMilestones = computed(() => {
                     </div>
                 </div>
 
-                <!-- Priority Status Indicators Banner -->
+                <!-- Priority Status Indicators Banner (Clean Text Badges Without Icons) -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-medium text-slate-700">
                     <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between">
-                        <span class="font-bold text-rose-900 flex items-center gap-1.5">
-                            <Flame class="w-4 h-4 text-rose-600" /> Khẩn Cấp / Gấp
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 font-black text-[10px]">Ưu tiên #1</span>
+                        <span class="font-bold text-rose-900">Khẩn Cấp / Gấp</span>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-950 font-black text-[10px]">Mức #1</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between">
-                        <span class="font-bold text-amber-900 flex items-center gap-1.5">
-                            <Zap class="w-4 h-4 text-amber-600" /> Ưu Tiên Cao
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[10px]">Ưu tiên #2</span>
+                        <span class="font-bold text-amber-900">Ưu Tiên Cao</span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black text-[10px]">Mức #2</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-between">
-                        <span class="font-bold text-blue-900 flex items-center gap-1.5">
-                            <Bookmark class="w-4 h-4 text-blue-600" /> Trung Bình
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-950 font-black text-[10px]">Ưu tiên #3</span>
+                        <span class="font-bold text-blue-900">Trung Bình</span>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-950 font-black text-[10px]">Mức #3</span>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between">
-                        <span class="font-bold text-slate-800 flex items-center gap-1.5">
-                            <CircleDot class="w-4 h-4 text-slate-500" /> Thấp
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-900 font-black text-[10px]">Ưu tiên #4</span>
+                        <span class="font-bold text-slate-800">Thấp</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-900 font-black text-[10px]">Mức #4</span>
                     </div>
                 </div>
             </div>
@@ -413,11 +392,11 @@ const filteredMilestones = computed(() => {
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
                         <span class="w-3 h-3 rounded-full bg-rose-400 animate-ping"></span>
-                        <h2 class="text-base font-serif font-bold text-white flex items-center gap-2">
-                            🎯 Việc Ưu Tiên Cao Cần Xử Lý Trước
+                        <h2 class="text-base font-serif font-bold text-white">
+                            Việc Ưu Tiên Cao Cần Xử Lý Trước
                         </h2>
                     </div>
-                    <span class="text-xs text-rose-200 font-medium">Click vào việc để xem chi tiết & cập nhật!</span>
+                    <span class="text-xs text-rose-200 font-medium">Click vào việc để xem chi tiết & cập nhật</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -437,12 +416,8 @@ const filteredMilestones = computed(() => {
 
                             <div class="truncate">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(item.task.priority)">
-                                        <Flame v-if="item.task.priority === 'urgent'" class="w-3 h-3" />
-                                        <Zap v-else-if="item.task.priority === 'high'" class="w-3 h-3" />
-                                        <Bookmark v-else-if="item.task.priority === 'medium'" class="w-3 h-3" />
-                                        <CircleDot v-else class="w-3 h-3" />
-                                        <span>{{ getPriorityLabelText(item.task.priority) }}</span>
+                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold border uppercase" :class="getPriorityBadgeClass(item.task.priority)">
+                                        {{ getPriorityLabelText(item.task.priority) }}
                                     </span>
                                 </div>
                                 <span class="font-bold text-white block truncate group-hover:text-rose-200 transition">{{ item.task.title }}</span>
@@ -467,10 +442,10 @@ const filteredMilestones = computed(() => {
                     <span class="text-xs font-bold text-slate-700 shrink-0">Lọc Mức Ưu Tiên:</span>
                     <select v-model="selectedPriorityFilter" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-hidden">
                         <option value="all">Tất Cả Mức Ưu Tiên</option>
-                        <option value="urgent">🔥 Khẩn Cấp / Gấp</option>
-                        <option value="high">⚡ Ưu Tiên Cao</option>
-                        <option value="medium">📌 Trung Bình</option>
-                        <option value="low">🌱 Thấp</option>
+                        <option value="urgent">Khẩn Cấp / Gấp</option>
+                        <option value="high">Ưu Tiên Cao</option>
+                        <option value="medium">Trung Bình</option>
+                        <option value="low">Thấp</option>
                     </select>
                 </div>
 
@@ -555,12 +530,8 @@ const filteredMilestones = computed(() => {
                             </div>
 
                             <div class="flex items-center gap-2.5 shrink-0">
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(task.priority)">
-                                    <Flame v-if="task.priority === 'urgent'" class="w-3 h-3" />
-                                    <Zap v-else-if="task.priority === 'high'" class="w-3 h-3" />
-                                    <Bookmark v-else-if="task.priority === 'medium'" class="w-3 h-3" />
-                                    <CircleDot v-else class="w-3 h-3" />
-                                    <span>{{ getPriorityLabelText(task.priority) }}</span>
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase" :class="getPriorityBadgeClass(task.priority)">
+                                    {{ getPriorityLabelText(task.priority) }}
                                 </span>
 
                                 <span v-if="task.estimated_cost" class="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
@@ -581,12 +552,8 @@ const filteredMilestones = computed(() => {
                 <div class="p-6 border-b border-slate-100 bg-white sticky top-0 flex items-center justify-between z-10">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(selectedTaskDetail.task.priority)">
-                                <Flame v-if="selectedTaskDetail.task.priority === 'urgent'" class="w-3 h-3" />
-                                <Zap v-else-if="selectedTaskDetail.task.priority === 'high'" class="w-3 h-3" />
-                                <Bookmark v-else-if="selectedTaskDetail.task.priority === 'medium'" class="w-3 h-3" />
-                                <CircleDot v-else class="w-3 h-3" />
-                                <span>{{ getPriorityLabelText(selectedTaskDetail.task.priority) }}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase" :class="getPriorityBadgeClass(selectedTaskDetail.task.priority)">
+                                {{ getPriorityLabelText(selectedTaskDetail.task.priority) }}
                             </span>
                             <span class="text-xs font-bold text-rose-800">{{ selectedTaskDetail.timeframe }}</span>
                         </div>
@@ -660,7 +627,7 @@ const filteredMilestones = computed(() => {
                     </div>
 
                     <div v-if="saveSuccessMsg" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-                        <CheckCircle2 class="w-4 h-4 text-emerald-600" /> Đã lưu thay đổi chi tiết công việc thành công!
+                        Đã lưu thay đổi chi tiết công việc thành công!
                     </div>
                 </div>
 
@@ -699,10 +666,10 @@ const filteredMilestones = computed(() => {
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Mức Độ Ưu Tiên *</label>
                         <select v-model="newTaskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden">
-                            <option value="urgent">🔥 Khẩn Cấp / Gấp (Xử lý ngay)</option>
-                            <option value="high">⚡ Ưu Tiên Cao (Quan trọng)</option>
-                            <option value="medium">📌 Trung Bình (Theo tiến độ)</option>
-                            <option value="low">🌱 Thấp (Tham khảo)</option>
+                            <option value="urgent">Khẩn Cấp / Gấp (Xử lý ngay)</option>
+                            <option value="high">Ưu Tiên Cao (Quan trọng)</option>
+                            <option value="medium">Trung Bình (Theo tiến độ)</option>
+                            <option value="low">Thấp (Tham khảo)</option>
                         </select>
                     </div>
 
@@ -761,12 +728,8 @@ const filteredMilestones = computed(() => {
                                     <span class="text-xs font-bold text-slate-900 truncate" :class="{ 'line-through text-slate-400': task.is_completed }">{{ task.title }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold border uppercase flex items-center gap-1" :class="getPriorityBadgeClass(task.priority)">
-                                        <Flame v-if="task.priority === 'urgent'" class="w-3 h-3" />
-                                        <Zap v-else-if="task.priority === 'high'" class="w-3 h-3" />
-                                        <Bookmark v-else-if="task.priority === 'medium'" class="w-3 h-3" />
-                                        <CircleDot v-else class="w-3 h-3" />
-                                        <span>{{ getPriorityLabelText(task.priority) }}</span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold border uppercase" :class="getPriorityBadgeClass(task.priority)">
+                                        {{ getPriorityLabelText(task.priority) }}
                                     </span>
                                     <span v-if="task.estimated_cost" class="text-[11px] font-bold text-rose-900 bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
                                         {{ formatCurrency(task.estimated_cost) }}
