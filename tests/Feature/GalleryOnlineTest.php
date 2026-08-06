@@ -12,9 +12,11 @@ beforeEach(function () {
 });
 
 test('workspace admin can view gallery page', function () {
-    $workspace = Workspace::factory()->create([
+    $workspace = Workspace::create([
         'name' => 'Đám Cưới Test Gallery',
-        'slug' => 'test-gallery-slug',
+        'slug' => 'test-gallery-slug-1',
+        'groom_name' => 'Quốc Trung',
+        'bride_name' => 'Hồng Vân',
     ]);
 
     session()->put('active_workspace_id', $workspace->id);
@@ -25,7 +27,12 @@ test('workspace admin can view gallery page', function () {
 });
 
 test('workspace admin can upload photos to gallery album', function () {
-    $workspace = Workspace::factory()->create();
+    $workspace = Workspace::create([
+        'name' => 'Đám Cưới Test Gallery 2',
+        'slug' => 'test-gallery-slug-2',
+        'groom_name' => 'Quốc Trung',
+        'bride_name' => 'Hồng Vân',
+    ]);
     session()->put('active_workspace_id', $workspace->id);
 
     $file = UploadedFile::fake()->image('pre_wedding_sample.jpg');
@@ -48,7 +55,12 @@ test('workspace admin can upload photos to gallery album', function () {
 });
 
 test('workspace admin can toggle pin and moderation status of photo', function () {
-    $workspace = Workspace::factory()->create();
+    $workspace = Workspace::create([
+        'name' => 'Đám Cưới Test Gallery 3',
+        'slug' => 'test-gallery-slug-3',
+        'groom_name' => 'Quốc Trung',
+        'bride_name' => 'Hồng Vân',
+    ]);
 
     $memory = WeddingMemory::create([
         'workspace_id' => $workspace->id,
@@ -72,8 +84,11 @@ test('workspace admin can toggle pin and moderation status of photo', function (
 });
 
 test('guests can view public gallery and upload live photos', function () {
-    $workspace = Workspace::factory()->create([
+    $workspace = Workspace::create([
+        'name' => 'Đám Cưới Minh Trung',
         'slug' => 'dam-cuoi-minh-trung',
+        'groom_name' => 'Minh Trung',
+        'bride_name' => 'Hồng Vân',
     ]);
 
     $response = $this->get('/wedding/shared-gallery/dam-cuoi-minh-trung');
