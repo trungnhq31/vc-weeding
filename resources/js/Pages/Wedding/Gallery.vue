@@ -16,7 +16,8 @@ import {
   ExternalLink,
   Layers,
   Camera,
-  Star
+  Star,
+  Maximize2
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import WorkspaceLayout from '@/Layouts/WorkspaceLayout.vue';
@@ -240,6 +241,14 @@ const getCategoryLabel = (cat: string) => {
 
           <!-- Top Action Buttons -->
           <div class="flex items-center gap-3 shrink-0 flex-wrap">
+            <a 
+              :href="shareUrl" 
+              target="_blank" 
+              class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md"
+            >
+              <ExternalLink class="w-4 h-4 text-rose-300" /> Xem Gallery Công Khai
+            </a>
+
             <button 
               @click="showQrModal = true" 
               class="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-2 cursor-pointer"
@@ -366,12 +375,17 @@ const getCategoryLabel = (cat: string) => {
           class="group relative bg-white rounded-3xl border border-rose-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
         >
           <!-- Image Thumbnail View -->
-          <div class="relative aspect-4/3 overflow-hidden bg-slate-100 cursor-pointer" @click="activeLightboxImage = item">
+          <div class="relative aspect-4/3 overflow-hidden bg-slate-100 cursor-pointer" @click="activeLightboxImage = item" title="Click để xem hình ảnh khổ lớn">
             <img 
               :src="item.image_url" 
               :alt="item.title || 'Ảnh kỷ niệm'"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
             />
+
+            <!-- Hover Prompt Banner -->
+            <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+              <Maximize2 class="w-4 h-4 text-rose-300" /> Xem Ảnh Khổ Lớn
+            </div>
 
             <!-- Pinned Badge -->
             <div v-if="item.is_pinned" class="absolute top-3 left-3 px-2.5 py-1 rounded-xl bg-amber-500 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-md">
