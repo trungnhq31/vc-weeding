@@ -126,6 +126,7 @@ services:
       - "5173:5173"
     volumes:
       - .:/var/www/html
+      - vite_node_modules:/var/www/html/node_modules
     env_file:
       - .env.docker
     depends_on:
@@ -139,4 +140,6 @@ networks:
 
 volumes:
   db_data:
+    driver: local
+  vite_node_modules:
     driver: local

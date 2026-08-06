@@ -7,14 +7,15 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\WeddingMilestoneResource\Pages;
 use App\Models\WeddingMilestone;
 use BackedEnum;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -147,7 +148,7 @@ class WeddingMilestoneResource extends Resource
             ])
             ->defaultSort('order')
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ]);
     }
 

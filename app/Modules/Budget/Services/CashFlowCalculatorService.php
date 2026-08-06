@@ -19,9 +19,9 @@ class CashFlowCalculatorService
         $totalEstimated = (float) $items->sum('estimated_amount');
         $totalActual = (float) $items->sum('actual_amount');
         $totalDepositPaid = (float) $items->sum('deposit_paid');
-        $remainingBalance = max(0, $totalActual - $totalDepositPaid);
+        $remainingBalance = (float) max(0, $totalActual - $totalDepositPaid);
 
-        $overrunAmount = max(0, $totalActual - $budgetCap);
+        $overrunAmount = (float) max(0, $totalActual - $budgetCap);
         $isOverrunAlert = $totalActual > $budgetCap;
 
         $upcomingPayments = BudgetItem::where('workspace_id', $workspaceId)

@@ -7,11 +7,9 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\GroundedAiController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
-use App\Http\Controllers\PlannerDashboardController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\RsvpController;
 use App\Http\Controllers\SitemapController;
-use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WeddingController;
 use App\Http\Controllers\WeddingTimelineController;
@@ -56,19 +54,26 @@ $weddingRoutes = function () {
     Route::post('/ai-query', [GroundedAiController::class, 'query'])->name('wedding.ai.query');
     Route::post('/ai-personalize-timeline', [WeddingTimelineController::class, 'aiPersonalizeTimeline'])->name('wedding.ai.personalize');
 
-    // Planning Modules
+    // Planning Modules & Actions
     Route::get('/budget', [WeddingController::class, 'budget'])->name('wedding.budget');
-    Route::post('/budget/select-venue', [WeddingController::class, 'selectVenue'])->name('wedding.budget.select_venue');
-    Route::get('/budget/export', [WeddingController::class, 'exportBudget'])->name('wedding.budget.export');
+    Route::post('/budget', [WeddingController::class, 'storeBudgetItem'])->name('wedding.budget.store');
+    Route::post('/budget/{item}/payment', [WeddingController::class, 'recordBudgetPayment'])->name('wedding.budget.payment');
+    Route::delete('/budget/{item}', [WeddingController::class, 'deleteBudgetItem'])->name('wedding.budget.delete');
+
     Route::get('/guests', [WeddingController::class, 'guests'])->name('wedding.guests');
-    Route::post('/guests/quick-store', [WeddingController::class, 'quickStoreGuest'])->name('wedding.guests.quick_store');
-    Route::get('/guests/export', [WeddingController::class, 'exportGuests'])->name('wedding.guests.export');
+    Route::post('/guests', [WeddingController::class, 'storeGuest'])->name('wedding.guests.store');
+    Route::post('/guests/{guest}', [WeddingController::class, 'updateGuest'])->name('wedding.guests.update');
+    Route::delete('/guests/{guest}', [WeddingController::class, 'deleteGuest'])->name('wedding.guests.delete');
+    Route::post('/tables', [WeddingController::class, 'storeTable'])->name('wedding.tables.store');
+
     Route::get('/documents', [WeddingController::class, 'documents'])->name('wedding.documents');
     Route::get('/invitation-editor', [WeddingController::class, 'invitationEditor'])->name('wedding.invitation_editor');
-    Route::post('/invitation-editor/save', [WeddingController::class, 'saveInvitationCms'])->name('wedding.invitation_editor.save');
+    Route::get('/visualizer', [WeddingController::class, 'visualizer'])->name('wedding.visualizer');
+
     Route::get('/settings', [WeddingController::class, 'settings'])->name('wedding.settings');
-    Route::get('/planner-dashboard', [PlannerDashboardController::class, 'index'])->name('wedding.planner_dashboard');
-    Route::post('/subscription/upgrade', [SubscriptionController::class, 'upgrade'])->name('wedding.subscription.upgrade');
+    Route::post('/settings', [WeddingController::class, 'updateSettings'])->name('wedding.settings.update');
+
+    Route::get('/export-excel', [WeddingController::class, 'exportExcel'])->name('wedding.export_excel');
 
     Route::get('/invitation/{guest_slug}', [WeddingController::class, 'invitation'])->name('wedding.invitation');
     Route::post('/rsvp', [RsvpController::class, 'store'])->name('wedding.rsvp.store');
