@@ -4,6 +4,7 @@ import {
     Check, 
     ChevronRight, 
     ChevronDown,
+    ChevronUp,
     X, 
     Plus, 
     AlertTriangle, 
@@ -105,6 +106,21 @@ const props = defineProps<{
 const isAiDrawerOpen = ref(false);
 const selectedMilestone = ref<Milestone | null>(null);
 
+// Collapsible State Map for Milestone Cards (Default: Step 1 expanded, others collapsed for neat UI)
+const collapsedState = ref<Record<string, boolean>>({});
+
+const toggleMilestoneCollapse = (milestoneId: string) => {
+    collapsedState.value[milestoneId] = !collapsedState.value[milestoneId];
+};
+
+const isMilestoneCollapsed = (milestoneId: string, index: number) => {
+    if (collapsedState.value[milestoneId] !== undefined) {
+        return collapsedState.value[milestoneId];
+    }
+    // By default, expand first step (index 0), collapse step 2..N
+    return index > 0;
+};
+
 // Dedicated Right Drawer for Selected Task Detail
 const selectedTaskDetail = ref<{
     task: Task;
@@ -193,7 +209,6 @@ const saveTaskDetails = async () => {
         });
         const data = await response.json();
         if (data.success) {
-            // Update in local milestones array
             props.milestones.forEach(m => {
                 const target = m.tasks.find(t => t.id === task.id);
                 if (target) {
@@ -318,7 +333,7 @@ const filteredMilestones = computed(() => {
     <WorkspaceLayout title="Lộ Trình & Mức Ưu Tiên" active-nav="timeline">
         <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
             
-            <!-- 1. Professional Guidance Header -->
+            <!-- 1. Professional Neutral Guidance Header -->
             <div class="p-8 rounded-3xl bg-white border border-rose-100 shadow-xl shadow-rose-900/5 space-y-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
                     <div class="space-y-2">
@@ -329,7 +344,7 @@ const filteredMilestones = computed(() => {
                             {{ workspace?.groom_name && workspace?.bride_name ? `Lộ Trình Đám Cưới ${workspace.groom_name} & ${workspace.bride_name}` : 'Kế Hoạch Chuẩn Bị Đám Cưới Trọn Gói' }}
                         </h1>
                         <p class="text-xs md:text-sm text-slate-600 font-medium">
-                            Phân chia tự động mức độ ưu tiên chuẩn giúp dâu rể biết rõ cần phải tập trung xử lý việc gì trước!
+                            Phân chia tự động mức độ ưu tiên công việc giúp dâu rể theo dõi và triển khai theo từng mốc thời gian.
                         </p>
                     </div>
 
@@ -382,7 +397,7 @@ const filteredMilestones = computed(() => {
                     <div class="flex items-center gap-2.5">
                         <span class="w-3 h-3 rounded-full bg-rose-400 animate-ping"></span>
                         <h2 class="text-base font-serif font-bold text-white flex items-center gap-2">
-                            🎯 Việc Ưu Tiên Cao Nhất Cần Làm Hôm Nay
+                            🎯 Việc Ưu Tiên Cao Cần Xử Lý Trước
                         </h2>
                     </div>
                     <span class="text-xs text-rose-200 font-medium">Click vào việc để xem chi tiết & cập nhật!</span>
@@ -396,7 +411,6 @@ const filteredMilestones = computed(() => {
                         class="p-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition cursor-pointer flex items-center justify-between gap-3 text-xs group"
                     >
                         <div class="flex items-center gap-3 min-w-0">
-                            <!-- Checkbox button with stop propagation so user can toggle if they click directly on checkbox -->
                             <button 
                                 @click.stop="toggleTask(item.task)"
                                 class="w-5 h-5 rounded-full border border-rose-300 bg-white/10 flex items-center justify-center shrink-0 hover:bg-rose-500 transition cursor-pointer"
@@ -456,43 +470,58 @@ const filteredMilestones = computed(() => {
                 </div>
             </div>
 
-            <!-- 4. Step-by-Step Milestone Stream -->
-            <div class="space-y-6">
+            <!-- 4. Collapsible Step-by-Step Milestone Accordions (Thu gọn/mở rộng từng bước) -->
+            <div class="space-y-4">
                 <div 
                     v-for="(milestone, index) in filteredMilestones" 
                     :key="milestone.id"
                     class="bg-white rounded-3xl border border-rose-100 shadow-md shadow-rose-900/5 overflow-hidden transition-all hover:border-rose-200"
                 >
-                    <!-- Milestone Header Bar -->
-                    <div class="p-6 bg-gradient-to-r from-rose-50/50 via-white to-amber-50/30 border-b border-rose-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="space-y-1">
+                    <!-- Milestone Collapsible Header Bar -->
+                    <div 
+                        @click="toggleMilestoneCollapse(milestone.id)"
+                        class="p-6 bg-gradient-to-r from-rose-50/50 via-white to-amber-50/30 border-b border-rose-100/80 flex items-center justify-between gap-4 cursor-pointer select-none group"
+                    >
+                        <div class="space-y-1 min-w-0">
                             <div class="flex items-center gap-2">
                                 <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white font-extrabold text-[10px] uppercase">
                                     Bước {{ index + 1 }}
                                 </span>
                                 <span class="text-xs font-bold text-rose-900">{{ milestone.timeframe }}</span>
                             </div>
-                            <h3 class="text-lg font-serif font-bold text-slate-900">{{ milestone.title }}</h3>
-                            <p class="text-xs text-slate-500 font-medium">{{ milestone.summary }}</p>
+                            <h3 class="text-base sm:text-lg font-serif font-bold text-slate-900 group-hover:text-rose-700 transition">
+                                {{ milestone.title }}
+                            </h3>
+                            <p class="text-xs text-slate-500 font-medium truncate">{{ milestone.summary }}</p>
                         </div>
 
-                        <!-- Milestone Stats Pill -->
+                        <!-- Milestone Stats Pill & Collapse Toggle -->
                         <div class="flex items-center gap-3 shrink-0">
-                            <div class="text-right">
+                            <div class="text-right hidden sm:block">
                                 <span class="text-xs font-bold text-slate-900 block">{{ milestone.completedCount }}/{{ milestone.totalCount }} Hoàn Thành</span>
                                 <span class="text-[11px] text-slate-500">Ngân sách: {{ formatCurrency(Number(milestone.budget_allocated)) }}</span>
                             </div>
+                            
                             <button 
-                                @click="openMilestoneModal(milestone)"
-                                class="px-3.5 py-2 rounded-xl bg-white border border-rose-200 text-rose-900 text-xs font-bold shadow-2xs hover:bg-rose-50 transition flex items-center gap-1 cursor-pointer"
+                                @click.stop="openMilestoneModal(milestone)"
+                                class="px-3 py-1.5 rounded-xl bg-white border border-rose-200 text-rose-900 text-xs font-bold shadow-2xs hover:bg-rose-50 transition hidden md:flex items-center gap-1 cursor-pointer"
                             >
-                                Chi Tiết <ChevronRight class="w-4 h-4 text-rose-500" />
+                                Tóm Tắt
                             </button>
+
+                            <!-- Collapse / Expand Icon Indicator -->
+                            <div class="w-8 h-8 rounded-full bg-rose-50 group-hover:bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-700 transition">
+                                <ChevronUp v-if="!isMilestoneCollapsed(milestone.id, index)" class="w-4 h-4" />
+                                <ChevronDown v-else class="w-4 h-4" />
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Task List Items: Clicking row opens Right Navigation Drawer -->
-                    <div class="p-6 space-y-2.5">
+                    <!-- Collapsible Task List Body -->
+                    <div 
+                        v-show="!isMilestoneCollapsed(milestone.id, index)" 
+                        class="p-6 space-y-2.5 bg-slate-50/50"
+                    >
                         <div 
                             v-for="task in milestone.tasks" 
                             :key="task.id"
@@ -533,10 +562,9 @@ const filteredMilestones = computed(() => {
             </div>
         </main>
 
-        <!-- Right Navigation Drawer for Task Details (Right Navigation Details Slider) -->
+        <!-- Right Navigation Drawer for Task Details -->
         <div v-if="selectedTaskDetail" class="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end" @click="closeTaskDetail">
             <div class="w-full max-w-xl bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl overflow-y-auto" @click.stop>
-                <!-- Drawer Header -->
                 <div class="p-6 border-b border-slate-100 bg-white sticky top-0 flex items-center justify-between z-10">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
@@ -558,9 +586,7 @@ const filteredMilestones = computed(() => {
                     </button>
                 </div>
 
-                <!-- Drawer Content Form -->
                 <div class="p-6 space-y-6 flex-1 text-xs">
-                    <!-- Status Toggle Card -->
                     <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span class="font-bold text-slate-900 block text-xs">Trạng Thái Công Việc</span>
@@ -576,7 +602,6 @@ const filteredMilestones = computed(() => {
                         </button>
                     </div>
 
-                    <!-- Budget Info -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1">
                             <label class="block font-bold text-slate-700">Dự Chi Ban Đầu (VNĐ)</label>
@@ -597,7 +622,6 @@ const filteredMilestones = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Vendor Info -->
                     <div class="space-y-1.5">
                         <label class="block font-bold text-slate-700 flex items-center gap-1.5">
                             <Store class="w-4 h-4 text-rose-600" /> Đối Tác Vendor / Đơn Vị Phụ Trách
@@ -610,7 +634,6 @@ const filteredMilestones = computed(() => {
                         />
                     </div>
 
-                    <!-- Notes -->
                     <div class="space-y-1.5">
                         <label class="block font-bold text-slate-700 flex items-center gap-1.5">
                             <FileText class="w-4 h-4 text-rose-600" /> Ghi Chú & Kế Hoạch Thực Hiện
@@ -618,7 +641,7 @@ const filteredMilestones = computed(() => {
                         <textarea 
                             v-model="selectedTaskDetail.task.notes" 
                             rows="4" 
-                            placeholder="Ghi chú thêm số điện thoại liên hệ, hợp đồng, cọc đợt 1..." 
+                            placeholder="Ghi chú thêm thông tin liên hệ, cọc đợt 1..." 
                             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:border-rose-400"
                         ></textarea>
                     </div>
@@ -628,7 +651,6 @@ const filteredMilestones = computed(() => {
                     </div>
                 </div>
 
-                <!-- Drawer Footer Actions -->
                 <div class="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
                     <button @click="closeTaskDetail" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100">
                         Đóng lại
@@ -645,7 +667,7 @@ const filteredMilestones = computed(() => {
             </div>
         </div>
 
-        <!-- Task Add Modal with Priority Field -->
+        <!-- Task Add Modal -->
         <div v-if="showAddTaskModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
             <div class="w-full max-w-md bg-white p-6 rounded-3xl border border-rose-100 shadow-2xl space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">

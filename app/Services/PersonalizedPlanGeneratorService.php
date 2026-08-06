@@ -65,7 +65,7 @@ class PersonalizedPlanGeneratorService
             ['name' => 'Phim Ảnh Phóng Sự & Trang Điểm Makeup', 'category' => 'photo_video', 'pct' => 0.15, 'status' => 'partially_paid'],
             ['name' => 'Trang Trí Hoa Tươi Gia Tiên & Sảnh', 'category' => 'decor', 'pct' => 0.10, 'status' => 'unpaid'],
             ['name' => 'Trang Phục Váy Cưới & Nhẫn Cưới Gold', 'category' => 'attire', 'pct' => 0.10, 'status' => 'fully_paid'],
-            ['name' => 'Dự Phòng Rủi Ro & After-Party', 'category' => 'reserve', 'pct' => 0.15, 'status' => 'unpaid'],
+            ['name' => 'Dự Phòng Rủi Ro & Khoản Khác', 'category' => 'reserve', 'pct' => 0.15, 'status' => 'unpaid'],
         ];
 
         foreach ($budgetCategories as $bCat) {
@@ -150,7 +150,7 @@ class PersonalizedPlanGeneratorService
                     'budget_pct' => 0.25,
                     'tasks' => [
                         ['title' => 'Khảo sát & chốt hợp đồng Resort Bãi Biển / Villa', 'priority' => 'urgent', 'cost_pct' => 0.15, 'vendor' => 'Chloe Gallery / Mia Resort'],
-                        ['title' => 'Thuê xe bus chất lượng cao đưa đón đoàn khách xa', 'priority' => 'high', 'cost_pct' => 0.10, 'vendor' => 'Đội Xe Du Lịch'],
+                        ['title' => 'Thuê xe bus đưa đón đoàn khách xa', 'priority' => 'high', 'cost_pct' => 0.10, 'vendor' => 'Đội Xe Du Lịch'],
                     ],
                 ],
                 [
@@ -168,15 +168,15 @@ class PersonalizedPlanGeneratorService
                 ],
                 [
                     'timeframe' => 'Tháng 5 - Tháng 6',
-                    'title' => 'Giai đoạn 3: Sunset Ceremony & After-Party',
+                    'title' => 'Giai đoạn 3: Lễ Tiệc Ngoài Trời & Đêm Nhạc',
                     'slug' => 'giai-doan-3',
                     'icon' => '🔥',
                     'order' => 3,
-                    'summary' => 'Nghi thức hoàng hôn Bãi Biển & Đêm After-Party DJ',
+                    'summary' => 'Nghi thức trao nhẫn bãi biển & đêm nhạc giao lưu',
                     'budget_pct' => 0.40,
                     'tasks' => [
-                        ['title' => 'Nghi thức trao nhẫn hoàng hôn Sunset Ceremony', 'priority' => 'urgent', 'cost_pct' => 0.15, 'vendor' => 'Wedding Planner Coordinator'],
-                        ['title' => 'Đêm nhạc After-Party Đốt Lửa Trại & DJ Bạn Thân', 'priority' => 'high', 'cost_pct' => 0.25, 'vendor' => 'Đội Âm Thanh Light & Sound'],
+                        ['title' => 'Nghi thức trao nhẫn Sunset Ceremony', 'priority' => 'urgent', 'cost_pct' => 0.15, 'vendor' => 'Wedding Planner Coordinator'],
+                        ['title' => 'Đêm nhạc giao lưu bạn bè & âm thanh sự kiện', 'priority' => 'high', 'cost_pct' => 0.25, 'vendor' => 'Đội Âm Thanh Light & Sound'],
                     ],
                 ],
             ];
@@ -199,21 +199,21 @@ class PersonalizedPlanGeneratorService
             ],
             [
                 'timeframe' => 'Tháng 3 - Tháng 4',
-                'title' => 'Giai đoạn 2: Lễ Gia Tiên Miền Nam & Mâm Quả',
+                'title' => 'Giai đoạn 2: Lễ Gia Tiên & Mâm Quả',
                 'slug' => 'giai-doan-2',
                 'icon' => '🏮',
                 'order' => 2,
-                'summary' => 'Đặt 6 mâm quả tráp rồng phụng & thuê áo dài bê tráp',
+                'summary' => 'Đặt 6 mâm quả dâng lễ gia tiên & thuê áo dài bê tráp',
                 'budget_pct' => 0.30,
                 'tasks' => [
-                    ['title' => 'Đặt 6 mâm quả tráp rồng phụng dâng lễ gia tiên', 'priority' => 'urgent', 'cost_pct' => 0.12, 'vendor' => 'Cưới Hỏi Tráp Vàng'],
+                    ['title' => 'Đặt 6 mâm quả dâng lễ gia tiên', 'priority' => 'urgent', 'cost_pct' => 0.12, 'vendor' => 'Cưới Hỏi Tráp Vàng'],
                     ['title' => 'Thuê áo dài cưới dâu rể & đội nam nữ bê tráp (8 cặp)', 'priority' => 'high', 'cost_pct' => 0.08, 'vendor' => 'Áo Dài Cưới Sài Gòn'],
                     ['title' => 'Trang trí bàn thờ gia tiên hoa tươi tại tư gia', 'priority' => 'high', 'cost_pct' => 0.10, 'vendor' => 'Như Cưới Wedding Decor'],
                 ],
             ],
             [
                 'timeframe' => 'Tháng 5 - Tháng 6',
-                'title' => 'Giai đoạn 3: Báo Hỷ & Tiệc Cưới Hoành Tráng',
+                'title' => 'Giai đoạn 3: Tiệc Cưới & Tiếp Đón Khách',
                 'slug' => 'giai-doan-3',
                 'icon' => '🎉',
                 'order' => 3,
@@ -222,7 +222,7 @@ class PersonalizedPlanGeneratorService
                 'tasks' => [
                     ['title' => 'Gửi Thiệp Cưới Digital & Nhận RSVP Khách Mời qua Zalo', 'priority' => 'high', 'cost_pct' => 0.05, 'vendor' => 'Eloria Wedding OS'],
                     ['title' => 'Đón khách & Check-in Photo Booth hoa tươi sảnh tiệc', 'priority' => 'urgent', 'cost_pct' => 0.10, 'vendor' => 'Ban Khánh Tiết Nhà Hàng'],
-                    ['title' => 'Thanh toán đợt cuối & Khai tiệc cỗ cưới hoành tráng', 'priority' => 'high', 'cost_pct' => 0.35, 'vendor' => 'White Palace / Gem Center'],
+                    ['title' => 'Thanh toán đợt cuối & Khai tiệc cỗ cưới', 'priority' => 'high', 'cost_pct' => 0.35, 'vendor' => 'White Palace / Gem Center'],
                 ],
             ],
         ];

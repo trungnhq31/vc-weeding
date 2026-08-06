@@ -63,7 +63,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'notes' => 'Lựa chọn tone màu hoa tươi trang trí tiệc.',
                         'vendor_info' => 'Wedding Planner / Decor',
                         'subtasks' => [
-                            ['id' => 'sub-8', 'title' => 'Chọn Moodboard tone màu (Rose Gold / Sage Green / Champagne)', 'is_completed' => false],
+                            ['id' => 'sub-8', 'title' => 'Chọn Moodboard tone màu trang trí', 'is_completed' => false],
                             ['id' => 'sub-9', 'title' => 'Thống nhất thiết kế Backdrop đón khách & Sân khấu làm lễ', 'is_completed' => false],
                         ],
                     ],
@@ -76,7 +76,7 @@ class WeddingMilestoneSeeder extends Seeder
                 'icon' => 'Camera',
                 'order' => 2,
                 'status' => MilestoneStatus::Pending,
-                'summary' => 'Chụp bộ ảnh Pre-wedding studio/ngoại cảnh, chọn nhẫn cưới và may/thuê váy cô dâu + suit chú rể.',
+                'summary' => 'Chụp bộ ảnh Pre-wedding, chọn nhẫn cưới và trang phục dâu rể.',
                 'notes' => 'Lên kế hoạch bộ ảnh Pre-wedding và thử trang phục tiệc cưới.',
                 'budget_allocated' => 70000000.00,
                 'budget_spent' => 0.00,
@@ -90,7 +90,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'notes' => 'Lựa chọn gói chụp studio hoặc ngoại cảnh.',
                         'vendor_info' => 'Studio chụp ảnh cưới',
                         'subtasks' => [
-                            ['id' => 'sub-10', 'title' => 'Xem portfolio 3 Studio chuyên nghiệp', 'is_completed' => false],
+                            ['id' => 'sub-10', 'title' => 'Xem portfolio các Studio chuyên nghiệp', 'is_completed' => false],
                             ['id' => 'sub-11', 'title' => 'Chốt địa điểm chụp (Studio indoor / Ngoại cảnh)', 'is_completed' => false],
                             ['id' => 'sub-12', 'title' => 'Thử đồ studio & chốt kịch bản chụp ảnh', 'is_completed' => false],
                         ],
@@ -106,7 +106,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'subtasks' => [
                             ['id' => 'sub-13', 'title' => 'Đến showroom đo size tay cô dâu & chú rể', 'is_completed' => false],
                             ['id' => 'sub-14', 'title' => 'Chốt chất liệu vàng 18K / Vàng trắng', 'is_completed' => false],
-                            ['id' => 'sub-15', 'title' => 'Khắc ngày cưới & tên gọi thân mật inside nhẫn', 'is_completed' => false],
+                            ['id' => 'sub-15', 'title' => 'Khắc ngày cưới & tên inside nhẫn', 'is_completed' => false],
                         ],
                     ],
                     [
@@ -118,7 +118,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'notes' => 'Thử dáng váy tiệc chính & vest làm lễ.',
                         'vendor_info' => 'Thương hiệu áo cưới',
                         'subtasks' => [
-                            ['id' => 'sub-16', 'title' => 'Thử 3 dáng váy cưới (Váy công chúa, Đuôi cá, A-line)', 'is_completed' => false],
+                            ['id' => 'sub-16', 'title' => 'Thử các dáng váy cưới (Váy công chúa, Đuôi cá, A-line)', 'is_completed' => false],
                             ['id' => 'sub-17', 'title' => 'May đo / chỉnh sửa vừa vặn thân hình', 'is_completed' => false],
                         ],
                     ],
@@ -128,10 +128,10 @@ class WeddingMilestoneSeeder extends Seeder
                         'is_completed' => false,
                         'estimated_cost' => 0,
                         'actual_cost' => 0,
-                        'notes' => 'Tự tùy biến mẫu thiệp và lời mời cá nhân hóa.',
+                        'notes' => 'Tùy biến mẫu thiệp và lời mời cá nhân hóa.',
                         'vendor_info' => 'Eloria OS',
                         'subtasks' => [
-                            ['id' => 'sub-18', 'title' => 'Chọn mẫu thiệp điện tử 3D phong cách lãng mạn', 'is_completed' => false],
+                            ['id' => 'sub-18', 'title' => 'Chọn mẫu thiệp điện tử phù hợp', 'is_completed' => false],
                             ['id' => 'sub-19', 'title' => 'Cấu hình Google Maps chỉ đường & Form RSVP', 'is_completed' => false],
                         ],
                     ],
@@ -221,7 +221,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'is_completed' => false,
                         'estimated_cost' => 25000000,
                         'actual_cost' => 0,
-                        'notes' => 'Trang trí gia tiên phong cách truyền thống ấm cúng.',
+                        'notes' => 'Trang trí gia tiên phong cách truyền thống.',
                         'vendor_info' => 'Dịch vụ Gia Tiên Decor',
                         'subtasks' => [
                             ['id' => 'sub-28', 'title' => 'Chốt mẫu bàn thờ gia tiên & mâm quả', 'is_completed' => false],
@@ -249,7 +249,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'notes' => 'Chốt danh sách bài hát làm lễ và First Dance.',
                         'vendor_info' => 'MC Tiệc Cưới',
                         'subtasks' => [
-                            ['id' => 'sub-31', 'title' => 'Truyền đạt câu chuyện tình yêu cho MC', 'is_completed' => false],
+                            ['id' => 'sub-31', 'title' => 'Truyền đạt thông tin đám cưới cho MC', 'is_completed' => false],
                             ['id' => 'sub-32', 'title' => 'Chốt playlist nhạc làm lễ & First Dance', 'is_completed' => false],
                         ],
                     ],
@@ -318,13 +318,13 @@ class WeddingMilestoneSeeder extends Seeder
                 ],
             ],
             [
-                'title' => 'Giai đoạn 6: NGÀY CƯỚI THĂNG HOA!',
-                'slug' => 'giai-doan-6-ngay-cuoi-thang-hoa',
+                'title' => 'Giai đoạn 6: Ngày Cưới & Tổ Chức Lễ Tiệc',
+                'slug' => 'giai-doan-6-ngay-cuoi-to-chuc-le-tiec',
                 'timeframe' => 'Ngày Cưới',
                 'icon' => 'PartyPopper',
                 'order' => 6,
                 'status' => MilestoneStatus::Pending,
-                'summary' => 'Lễ Gia Tiên trang trọng buổi sáng & Tiệc Cưới bùng nổ buổi tối!',
+                'summary' => 'Nghi thức Lễ Gia Tiên buổi sáng & Tiệc cưới tại nhà hàng buổi tối.',
                 'notes' => null,
                 'budget_allocated' => 20000000.00,
                 'budget_spent' => 0.00,
@@ -356,7 +356,7 @@ class WeddingMilestoneSeeder extends Seeder
                         ],
                     ],
                     [
-                        'title' => 'Đón khách & Khai tiệc cưới hoành tráng tại nhà hàng',
+                        'title' => 'Đón khách & Khai tiệc cưới tại nhà hàng',
                         'priority' => 'urgent',
                         'is_completed' => false,
                         'estimated_cost' => 5000000,
@@ -365,11 +365,11 @@ class WeddingMilestoneSeeder extends Seeder
                         'vendor_info' => null,
                         'subtasks' => [
                             ['id' => 'sub-41', 'title' => 'Đón khách & chụp ảnh tại Backdrop', 'is_completed' => false],
-                            ['id' => 'sub-42', 'title' => 'Bắt đầu lễ cưới, cắt bánh & rót rượu Champagne', 'is_completed' => false],
+                            ['id' => 'sub-42', 'title' => 'Bắt đầu lễ cưới, cắt bánh & rót rượu', 'is_completed' => false],
                         ],
                     ],
                     [
-                        'title' => 'Trải nghiệm khoảnh khắc hạnh phúc trọn vẹn nhất đời!',
+                        'title' => 'Đón khách, tổ chức lễ tiệc & hoàn tất sự kiện',
                         'priority' => 'high',
                         'is_completed' => false,
                         'estimated_cost' => 0,
@@ -377,7 +377,7 @@ class WeddingMilestoneSeeder extends Seeder
                         'notes' => null,
                         'vendor_info' => null,
                         'subtasks' => [
-                            ['id' => 'sub-43', 'title' => 'Nâng ly chúc mừng hạnh phúc lứa đôi!', 'is_completed' => false],
+                            ['id' => 'sub-43', 'title' => 'Nâng ly chúc mừng & cảm ơn khách tham dự', 'is_completed' => false],
                         ],
                     ],
                 ],
