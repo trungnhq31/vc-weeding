@@ -12,6 +12,8 @@ import EmeraldLuxeTemplate from '@/Components/Wedding/Templates/EmeraldLuxeTempl
 import SunsetCoralTemplate from '@/Components/Wedding/Templates/SunsetCoralTemplate.vue';
 import GazetteNewspaperTemplate from '@/Components/Wedding/Templates/GazetteNewspaperTemplate.vue';
 import StorybookJournalTemplate from '@/Components/Wedding/Templates/StorybookJournalTemplate.vue';
+import StoryReelsTemplate from '@/Components/Wedding/Templates/StoryReelsTemplate.vue';
+import CinematicInteractiveTemplate from '@/Components/Wedding/Templates/CinematicInteractiveTemplate.vue';
 
 interface Wish {
     id: string;
@@ -50,6 +52,8 @@ const TEMPLATE_COMPONENTS: Record<string, any> = {
   'gazette-newspaper': GazetteNewspaperTemplate,
   'vintage-sepia': StorybookJournalTemplate,
   'storybook-journal': StorybookJournalTemplate,
+  'story-reels': StoryReelsTemplate,
+  'cinematic-luxury': CinematicInteractiveTemplate,
 };
 
 const activeTemplateComponent = computed(() => {

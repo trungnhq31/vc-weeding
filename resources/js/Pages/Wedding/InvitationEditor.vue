@@ -36,6 +36,8 @@ import EmeraldLuxeTemplate from '@/Components/Wedding/Templates/EmeraldLuxeTempl
 import SunsetCoralTemplate from '@/Components/Wedding/Templates/SunsetCoralTemplate.vue';
 import GazetteNewspaperTemplate from '@/Components/Wedding/Templates/GazetteNewspaperTemplate.vue';
 import StorybookJournalTemplate from '@/Components/Wedding/Templates/StorybookJournalTemplate.vue';
+import StoryReelsTemplate from '@/Components/Wedding/Templates/StoryReelsTemplate.vue';
+import CinematicInteractiveTemplate from '@/Components/Wedding/Templates/CinematicInteractiveTemplate.vue';
 
 interface TemplateItem {
   id: string;
@@ -110,6 +112,8 @@ const templateCatalog: TemplateItem[] = [
   { id: 'sunset-coral', name: '8. Tropical Sunset 50/50 Split View', desc: 'Bố cục 50/50 chia đôi màn hình màu cam san hô', badge: 'Hoàng Hôn', badgeColor: 'bg-orange-100 text-orange-900 border-orange-200' },
   { id: 'crimson-velvet', name: '9. The Wedding Gazette Newspaper', desc: 'Tờ báo tin tức tiệc cưới cổ điển 3 cột', badge: 'Tờ Báo Cổ', badgeColor: 'bg-stone-900 text-white border-stone-700' },
   { id: 'vintage-sepia', name: '10. Storybook Fairytale Journal', desc: 'Cuốn sách câu chuyện tình yêu phân chương tab', badge: 'Sách Tình Yêu', badgeColor: 'bg-amber-200 text-amber-950 border-amber-400' },
+  { id: 'story-reels', name: '11. Instagram Story Reels & Quiz', desc: 'Trải nghiệm vuốt Story như Instagram tích hợp Mini Quiz tương tác', badge: 'Story Quiz', badgeColor: 'bg-rose-500 text-white border-rose-400' },
+  { id: 'cinematic-luxury', name: '12. Imperial Concierge & Table Finder', desc: 'Phong cách hoàng gia kèm tiện ích Tra cứu Bàn Tiệc thông minh', badge: 'Tra Bàn Tiệc', badgeColor: 'bg-amber-600 text-white border-amber-400' },
 ];
 
 const selectedTemplate = computed(() => {
@@ -130,6 +134,8 @@ const activeTemplateComponent = computed(() => {
     'sunset-coral': SunsetCoralTemplate,
     'crimson-velvet': GazetteNewspaperTemplate,
     'vintage-sepia': StorybookJournalTemplate,
+    'story-reels': StoryReelsTemplate,
+    'cinematic-luxury': CinematicInteractiveTemplate,
     'boho-chic': PastelTemplate,
     'minimalist-ivory': ModernSlateTemplate,
   };
