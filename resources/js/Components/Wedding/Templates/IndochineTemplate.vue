@@ -20,6 +20,9 @@ const props = defineProps<{
 const musicPlayerRef = ref<any>(null);
 
 const rsvpAttending = ref<string>(props.guest?.rsvp_status === 'attending' ? 'yes' : 'yes');
+const rsvpCeremony = ref<boolean>(props.guest?.rsvp_ceremony !== 'declined');
+const rsvpReception = ref<boolean>(props.guest?.rsvp_reception !== 'declined');
+const rsvpAfterparty = ref<boolean>(props.guest?.rsvp_afterparty !== 'declined');
 const rsvpGuestsCount = ref<number>(props.guest?.confirmed_count || props.guest?.estimated_count || 1);
 const rsvpDietary = ref<string>(props.guest?.dietary_preference || '');
 const rsvpNotes = ref<string>(props.guest?.notes || '');
@@ -31,6 +34,9 @@ const handleRsvpSubmit = async () => {
     try {
         await props.submitRsvp({
             rsvp_status: rsvpAttending.value === 'yes' ? 'attending' : 'declined',
+            rsvp_ceremony: rsvpAttending.value === 'yes' && rsvpCeremony.value ? 'attending' : 'declined',
+            rsvp_reception: rsvpAttending.value === 'yes' && rsvpReception.value ? 'attending' : 'declined',
+            rsvp_afterparty: rsvpAttending.value === 'yes' && rsvpAfterparty.value ? 'attending' : 'declined',
             confirmed_count: rsvpGuestsCount.value,
             dietary_preference: rsvpDietary.value,
             notes: rsvpNotes.value,
@@ -89,45 +95,71 @@ const handleRsvpSubmit = async () => {
         <WeddingPhotoGallery :memories="memories" :guest="guest" :uploadMemory="uploadMemory" />
       </section>
 
-      <!-- Traditional Red Velvet RSVP Form -->
-      <section class="bg-red-950 text-amber-100 rounded-3xl p-8 md:p-12 shadow-2xl border-2 border-amber-500/50">
+      <!-- Traditional Red Velvet RSVP Form (Pastel Crimson) -->
+      <section class="bg-[#FFFDF9] text-rose-950 rounded-3xl p-6 md:p-12 shadow-xl border-2 border-red-200/80">
         <div class="max-w-lg mx-auto space-y-6">
           <div class="text-center space-y-2">
-            <span class="text-xs font-bold tracking-widest text-amber-400 uppercase">THƯ PHÚC ĐÁP</span>
-            <h2 class="text-3xl font-serif font-bold text-amber-200">Xác Nhận Tham Dự Lễ Cưới</h2>
+            <span class="text-xs font-bold tracking-widest text-red-700 uppercase">THƯ PHÚC ĐÁP</span>
+            <h2 class="text-3xl font-serif font-bold text-red-950">Xác Nhận Tham Dự Lễ Cưới</h2>
           </div>
 
           <form @submit.prevent="handleRsvpSubmit" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
-              <button type="button" @click="rsvpAttending = 'yes'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'yes' ? 'bg-amber-500 text-red-950 border-amber-400' : 'bg-red-900 text-amber-200 border-red-800'">
+              <button type="button" @click="rsvpAttending = 'yes'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'yes' ? 'bg-red-700 text-white border-red-700 shadow-md' : 'bg-red-50 text-red-900 border-red-200 hover:bg-red-100/50'">
                 <CheckCircle2 class="w-4 h-4" />
                 <span>THAM DỰ</span>
               </button>
-              <button type="button" @click="rsvpAttending = 'no'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'no' ? 'bg-amber-500 text-red-950 border-amber-400' : 'bg-red-900 text-amber-200 border-red-800'">
+              <button type="button" @click="rsvpAttending = 'no'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'no' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-red-50 text-red-900 border-red-200 hover:bg-red-100/50'">
                 <span>CÁO LỖI VẮNG MẶT</span>
               </button>
             </div>
 
-            <div v-if="rsvpAttending === 'yes'">
-              <label class="block text-xs font-bold text-amber-300 mb-1">SỐ LƯỢNG NGUYÊN QUÁN / KHÁCH DỰ</label>
-              <input type="number" min="1" max="5" v-model="rsvpGuestsCount" class="w-full px-4 py-2.5 rounded-xl bg-red-900 border border-amber-500/40 text-amber-100 text-sm focus:outline-none" />
+            <div v-if="rsvpAttending === 'yes'" class="space-y-3 p-4 rounded-2xl bg-red-50/50 border border-red-100">
+              <label class="block text-xs font-bold text-red-900 font-sans uppercase">Chọn sự kiện tham dự</label>
+              <div class="space-y-2 text-xs font-sans">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpCeremony" class="rounded border-red-300 text-red-600 focus:ring-red-500 w-4 h-4" />
+                  <span class="font-bold">Lễ Gia Tiên & Rước Dâu</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpReception" class="rounded border-red-300 text-red-600 focus:ring-red-500 w-4 h-4" />
+                  <span class="font-bold">Tiệc Cưới Chính (Khai Tiệc)</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpAfterparty" class="rounded border-red-300 text-red-600 focus:ring-red-500 w-4 h-4" />
+                  <span class="font-bold">Dư Tiệc / After-Party bạn thân</span>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="rsvpAttending === 'yes'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-red-800 mb-1">SỐ LƯỢNG KHÁCH DỰ</label>
+                <input type="number" min="1" max="5" v-model="rsvpGuestsCount" class="w-full px-4 py-2.5 rounded-xl bg-white border border-red-200 text-rose-950 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-red-800 mb-1">KHẨU VỊ / CHẾ ĐỘ ĂN</label>
+                <input type="text" v-model="rsvpDietary" placeholder="VD: Ăn chay, không hải sản..." class="w-full px-4 py-2.5 rounded-xl bg-white border border-red-200 text-rose-950 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400" />
+              </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-amber-300 mb-1">LỜI CHÚC PHÚC THÂN TÌNH</label>
-              <textarea v-model="rsvpNotes" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-red-900 border border-amber-500/40 text-amber-100 text-sm focus:outline-none"></textarea>
+              <label class="block text-xs font-bold text-red-800 mb-1">LỜI CHÚC PHÚC THÂN TÌNH</label>
+              <textarea v-model="rsvpNotes" rows="3" placeholder="Gửi lời chúc tốt đẹp nhất đến cô dâu chú rể..." class="w-full px-4 py-2.5 rounded-xl bg-white border border-red-200 text-rose-950 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400"></textarea>
             </div>
 
-            <button type="submit" :disabled="isSubmittingRsvp" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-red-950 font-bold text-sm shadow-lg hover:opacity-95 transition cursor-pointer">
+            <button type="submit" :disabled="isSubmittingRsvp" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-sm shadow-md shadow-red-600/10 hover:opacity-95 transition cursor-pointer">
               {{ isSubmittingRsvp ? 'ĐANG GỬI THƯ...' : 'GỬI PHÚC ĐÁP THÀNH HÔN' }}
             </button>
 
-            <p v-if="rsvpSuccess" class="text-center text-xs font-bold text-amber-300 bg-red-900/80 py-2 rounded-lg border border-amber-500/40">
+            <p v-if="rsvpSuccess" class="text-center text-xs font-bold text-emerald-800 bg-emerald-50 py-2.5 rounded-xl border border-emerald-200">
               🧧 Cảm ơn quý khách đã phúc đáp cho dâu rể!
             </p>
           </form>
         </div>
       </section>
+
+
 
       <WeddingGiftBoxModal :wishes="wishes" :guest="guest" :submitWish="submitWish" />
     </main>

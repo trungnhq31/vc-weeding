@@ -20,6 +20,9 @@ const props = defineProps<{
 const musicPlayerRef = ref<any>(null);
 
 const rsvpAttending = ref<string>(props.guest?.rsvp_status === 'attending' ? 'yes' : 'yes');
+const rsvpCeremony = ref<boolean>(props.guest?.rsvp_ceremony !== 'declined');
+const rsvpReception = ref<boolean>(props.guest?.rsvp_reception !== 'declined');
+const rsvpAfterparty = ref<boolean>(props.guest?.rsvp_afterparty !== 'declined');
 const rsvpGuestsCount = ref<number>(props.guest?.confirmed_count || props.guest?.estimated_count || 1);
 const rsvpDietary = ref<string>(props.guest?.dietary_preference || '');
 const rsvpNotes = ref<string>(props.guest?.notes || '');
@@ -31,6 +34,9 @@ const handleRsvpSubmit = async () => {
     try {
         await props.submitRsvp({
             rsvp_status: rsvpAttending.value === 'yes' ? 'attending' : 'declined',
+            rsvp_ceremony: rsvpAttending.value === 'yes' && rsvpCeremony.value ? 'attending' : 'declined',
+            rsvp_reception: rsvpAttending.value === 'yes' && rsvpReception.value ? 'attending' : 'declined',
+            rsvp_afterparty: rsvpAttending.value === 'yes' && rsvpAfterparty.value ? 'attending' : 'declined',
             confirmed_count: rsvpGuestsCount.value,
             dietary_preference: rsvpDietary.value,
             notes: rsvpNotes.value,
@@ -142,39 +148,63 @@ const handleRsvpSubmit = async () => {
       </section>
 
       <!-- Boarding RSVP -->
-      <section class="bg-sky-900 text-white rounded-3xl p-8 md:p-12 shadow-xl relative">
+      <section class="bg-white/95 text-sky-950 border border-sky-300 rounded-3xl p-6 md:p-12 shadow-xl shadow-sky-900/5 relative">
         <div class="max-w-lg mx-auto space-y-6">
           <div class="text-center space-y-2">
-            <span class="text-xs font-mono font-bold tracking-widest text-sky-300 uppercase">FLIGHT BOARDING CONFIRMATION</span>
-            <h2 class="text-3xl font-serif font-bold text-white">Xác Nhận Đặt Ve/RSVP</h2>
+            <span class="text-xs font-mono font-bold tracking-widest text-sky-600 uppercase">FLIGHT BOARDING CONFIRMATION</span>
+            <h2 class="text-3xl font-serif font-bold text-sky-950">Xác Nhận Đặt Vé</h2>
           </div>
 
           <form @submit.prevent="handleRsvpSubmit" class="space-y-4 pt-2">
             <div class="grid grid-cols-2 gap-3">
-              <button type="button" @click="rsvpAttending = 'yes'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'yes' ? 'bg-sky-500 text-white border-sky-400' : 'bg-sky-950 text-sky-200 border-sky-800'">
+              <button type="button" @click="rsvpAttending = 'yes'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'yes' ? 'bg-sky-600 text-white border-sky-600 shadow-md' : 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100/50'">
                 <CheckCircle2 class="w-4 h-4" />
                 <span>BOARDING CONFIRMED</span>
               </button>
-              <button type="button" @click="rsvpAttending = 'no'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'no' ? 'bg-sky-500 text-white border-sky-400' : 'bg-sky-950 text-sky-200 border-sky-800'">
+              <button type="button" @click="rsvpAttending = 'no'" class="py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer" :class="rsvpAttending === 'no' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100/50'">
                 <span>CANNOT BOARD</span>
               </button>
             </div>
 
-            <div v-if="rsvpAttending === 'yes'">
-              <label class="block text-xs font-mono text-sky-200 mb-1">NUMBER OF PASSENGERS</label>
-              <input type="number" min="1" max="5" v-model="rsvpGuestsCount" class="w-full px-4 py-2.5 rounded-xl bg-sky-950 border border-sky-700 text-white text-sm focus:outline-none" />
+            <div v-if="rsvpAttending === 'yes'" class="space-y-3 p-4 rounded-2xl bg-sky-50/50 border border-sky-100">
+              <label class="block text-xs font-bold uppercase text-sky-900">Chọn chuyến bay / Sự kiện tham dự</label>
+              <div class="space-y-2 text-xs font-mono">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpCeremony" class="rounded border-sky-300 text-sky-600 focus:ring-sky-500 w-4 h-4" />
+                  <span class="font-bold">Lễ Gia Tiên & Rước Dâu</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpReception" class="rounded border-sky-300 text-sky-600 focus:ring-sky-500 w-4 h-4" />
+                  <span class="font-bold">Tiệc Cưới Chính (Khai Tiệc)</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none text-slate-800">
+                  <input type="checkbox" v-model="rsvpAfterparty" class="rounded border-sky-300 text-sky-600 focus:ring-sky-500 w-4 h-4" />
+                  <span class="font-bold">Dư Tiệc / After-Party bạn thân</span>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="rsvpAttending === 'yes'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-mono text-sky-800 mb-1">SỐ LƯỢNG HÀNH KHÁCH / GUEST COUNT</label>
+                <input type="number" min="1" max="5" v-model="rsvpGuestsCount" class="w-full px-4 py-2.5 rounded-xl bg-white border border-sky-200 text-slate-900 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 shadow-2xs animate-fade-in" />
+              </div>
+              <div>
+                <label class="block text-xs font-mono text-sky-800 mb-1">KHẨU VỊ / DIETARY PREFERENCE</label>
+                <input type="text" v-model="rsvpDietary" placeholder="VD: Ăn chay, dị ứng hải sản..." class="w-full px-4 py-2.5 rounded-xl bg-white border border-sky-200 text-slate-900 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 shadow-2xs animate-fade-in" />
+              </div>
             </div>
 
             <div>
-              <label class="block text-xs font-mono text-sky-200 mb-1">PASSENGER NOTES</label>
-              <textarea v-model="rsvpNotes" rows="3" class="w-full px-4 py-2.5 rounded-xl bg-sky-950 border border-sky-700 text-white text-sm focus:outline-none"></textarea>
+              <label class="block text-xs font-mono text-sky-800 mb-1">GHI CHÚ HÀNH TRÌNH / PASSENGER NOTES</label>
+              <textarea v-model="rsvpNotes" rows="3" placeholder="Gửi lời chúc mừng đến Dâu Rể..." class="w-full px-4 py-2.5 rounded-xl bg-white border border-sky-200 text-slate-900 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 shadow-2xs"></textarea>
             </div>
 
-            <button type="submit" :disabled="isSubmittingRsvp" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white font-bold text-xs uppercase tracking-widest hover:opacity-95 transition cursor-pointer">
+            <button type="submit" :disabled="isSubmittingRsvp" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white font-bold text-xs uppercase tracking-widest hover:opacity-95 shadow-md shadow-sky-600/10 transition cursor-pointer">
               {{ isSubmittingRsvp ? 'CONFIRMING...' : 'CONFIRM BOARDING PASS' }}
             </button>
 
-            <p v-if="rsvpSuccess" class="text-center text-xs text-emerald-300 bg-sky-950/80 py-2 rounded-lg border border-sky-700">
+            <p v-if="rsvpSuccess" class="text-center text-xs font-mono text-emerald-800 bg-emerald-50 py-2.5 rounded-xl border border-emerald-200">
               ✈ Boarding pass confirmed! See you at Gate Asiana!
             </p>
           </form>

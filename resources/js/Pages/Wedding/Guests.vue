@@ -115,9 +115,17 @@ const localGuests = ref<any[]>(
         table: g.table_name || g.table || 'Chưa xếp',
         diet: g.dietary_preference || g.diet || '-',
         status: (g.rsvp_status as string) || g.status || 'attending',
+        rsvp_ceremony: g.rsvp_ceremony || (g.rsvp_status === 'attending' ? 'attending' : 'pending'),
+        rsvp_reception: g.rsvp_reception || (g.rsvp_status === 'attending' ? 'attending' : 'pending'),
+        rsvp_afterparty: g.rsvp_afterparty || (g.rsvp_status === 'attending' ? 'attending' : 'pending'),
         notes: g.notes || 'Thêm qua hệ thống'
       }))
-    : sampleGuests
+    : sampleGuests.map(g => ({
+        ...g,
+        rsvp_ceremony: g.status === 'attending' ? 'attending' : 'pending',
+        rsvp_reception: g.status === 'attending' ? 'attending' : 'pending',
+        rsvp_afterparty: g.status === 'attending' ? 'attending' : 'pending',
+      }))
 );
 
 const filteredGuests = computed(() => {
@@ -316,6 +324,10 @@ const totalGuests = computed(() => localGuests.value.length);
 const confirmedCount = computed(() => localGuests.value.filter(g => g.status === 'confirmed' || g.status === 'attending').length);
 const pendingCount = computed(() => localGuests.value.filter(g => g.status === 'pending').length);
 const declinedCount = computed(() => localGuests.value.filter(g => g.status === 'declined').length);
+
+const ceremonyCount = computed(() => localGuests.value.filter(g => g.rsvp_ceremony === 'confirmed' || g.rsvp_ceremony === 'attending').length);
+const receptionCount = computed(() => localGuests.value.filter(g => g.rsvp_reception === 'confirmed' || g.rsvp_reception === 'attending').length);
+const afterpartyCount = computed(() => localGuests.value.filter(g => g.rsvp_afterparty === 'confirmed' || g.rsvp_afterparty === 'attending').length);
 </script>
 
 <template>
@@ -339,6 +351,22 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
         <div class="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <span class="text-xs text-slate-500 font-medium">Từ Chối / Bận</span>
           <div class="text-3xl font-extrabold text-slate-400 mt-1 font-mono">{{ declinedCount }} Người</div>
+        </div>
+      </div>
+
+      <!-- Sub-Event RSVP Stats (Clean Pastel Row) -->
+      <div class="p-5 rounded-3xl bg-rose-50/40 border border-rose-100/60 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold text-rose-950">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <span>Lễ Gia Tiên & Rước Dâu: <strong class="text-rose-900 font-mono text-sm">{{ ceremonyCount }}</strong> người tham dự</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          <span>Tiệc Cưới Chính: <strong class="text-rose-900 font-mono text-sm">{{ receptionCount }}</strong> người tham dự</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span>Dư Tiệc / After-Party: <strong class="text-rose-900 font-mono text-sm">{{ afterpartyCount }}</strong> người tham dự</span>
         </div>
       </div>
 
@@ -536,7 +564,7 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                     </div>
                   </th>
 
-                  <th class="px-6 py-4">Nguồn khai báo</th>
+                  <th class="px-6 py-4">Sự kiện tham dự</th>
 
                   <!-- Clickable Sort: Status -->
                   <th @click="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
@@ -579,9 +607,26 @@ const declinedCount = computed(() => localGuests.value.filter(g => g.status === 
                   </td>
 
                   <td class="px-6 py-4.5">
-                    <span class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-900 text-[11px] font-bold inline-block">
-                      {{ guest.notes }}
-                    </span>
+                    <div class="flex flex-wrap gap-1 max-w-[180px]">
+                      <span 
+                        class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase inline-block"
+                        :class="guest.rsvp_ceremony === 'attending' || guest.rsvp_ceremony === 'confirmed' ? 'bg-rose-100 text-rose-800 border border-rose-200/80' : 'bg-slate-100 text-slate-400 border border-slate-200/60'"
+                      >
+                        Gia Tiên
+                      </span>
+                      <span 
+                        class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase inline-block"
+                        :class="guest.rsvp_reception === 'attending' || guest.rsvp_reception === 'confirmed' ? 'bg-amber-100 text-amber-800 border border-amber-200/80' : 'bg-slate-100 text-slate-400 border border-slate-200/60'"
+                      >
+                        Tiệc Chính
+                      </span>
+                      <span 
+                        class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase inline-block"
+                        :class="guest.rsvp_afterparty === 'attending' || guest.rsvp_afterparty === 'confirmed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/80' : 'bg-slate-100 text-slate-400 border border-slate-200/60'"
+                      >
+                        Afterparty
+                      </span>
+                    </div>
                   </td>
 
                   <td class="px-6 py-4.5">

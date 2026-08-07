@@ -21,6 +21,9 @@ const props = defineProps<{
 const musicPlayerRef = ref<any>(null);
 
 const rsvpAttending = ref<string>(props.guest?.rsvp_status === 'attending' ? 'yes' : 'yes');
+const rsvpCeremony = ref<boolean>(props.guest?.rsvp_ceremony !== 'declined');
+const rsvpReception = ref<boolean>(props.guest?.rsvp_reception !== 'declined');
+const rsvpAfterparty = ref<boolean>(props.guest?.rsvp_afterparty !== 'declined');
 const rsvpGuestsCount = ref<number>(props.guest?.confirmed_count || props.guest?.estimated_count || 1);
 const rsvpDietary = ref<string>(props.guest?.dietary_preference || '');
 const rsvpShuttleBus = ref<string>(props.guest?.shuttle_bus || 'no');
@@ -42,6 +45,9 @@ const handleRsvpSubmit = async () => {
     try {
         await props.submitRsvp({
             rsvp_status: rsvpAttending.value === 'yes' ? 'attending' : 'declined',
+            rsvp_ceremony: rsvpAttending.value === 'yes' && rsvpCeremony.value ? 'attending' : 'declined',
+            rsvp_reception: rsvpAttending.value === 'yes' && rsvpReception.value ? 'attending' : 'declined',
+            rsvp_afterparty: rsvpAttending.value === 'yes' && rsvpAfterparty.value ? 'attending' : 'declined',
             confirmed_count: rsvpGuestsCount.value,
             dietary_preference: rsvpDietary.value,
             shuttle_bus: rsvpShuttleBus.value,
@@ -133,7 +139,7 @@ const handleWishSubmit = async () => {
         <div class="max-w-xl mx-auto space-y-6">
           <div class="text-center space-y-2">
             <span class="text-xs font-semibold text-rose-600 tracking-widest uppercase">Xác Nhận Tham Dự</span>
-            <h2 class="text-3xl font-serif font-bold text-rose-950">Gửi Lời Xác Nhận RSVP</h2>
+            <h2 class="text-3xl font-serif font-bold text-rose-950">Gửi Lời Phản Hồi Tham Dự</h2>
             <p class="text-sm text-slate-600">Sự hiện diện của bạn là niềm vinh hạnh to lớn đối với gia đình chúng tôi!</p>
           </div>
 
@@ -158,6 +164,24 @@ const handleWishSubmit = async () => {
                 >
                   <span>Rất Tiếc Vắng Mặt</span>
                 </button>
+              </div>
+            </div>
+
+            <div v-if="rsvpAttending === 'yes'" class="space-y-3 p-4 rounded-2xl bg-rose-50/50 border border-rose-100">
+              <label class="block text-xs font-bold uppercase text-rose-900 font-sans">Chọn sự kiện tham dự</label>
+              <div class="space-y-2 font-sans text-xs">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" v-model="rsvpCeremony" class="rounded border-rose-300 text-rose-600 focus:ring-rose-500 w-4 h-4" />
+                  <span class="font-bold text-slate-800">Lễ Gia Tiên & Rước Dâu</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" v-model="rsvpReception" class="rounded border-rose-300 text-rose-600 focus:ring-rose-500 w-4 h-4" />
+                  <span class="font-bold text-slate-800">Tiệc Cưới Chính (Khai Tiệc)</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" v-model="rsvpAfterparty" class="rounded border-rose-300 text-rose-600 focus:ring-rose-500 w-4 h-4" />
+                  <span class="font-bold text-slate-800">Dư Tiệc / After-Party bạn thân</span>
+                </label>
               </div>
             </div>
 
