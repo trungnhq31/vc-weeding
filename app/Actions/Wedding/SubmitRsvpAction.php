@@ -44,6 +44,9 @@ class SubmitRsvpAction
 
         $guest->update([
             'rsvp_status' => $data->status,
+            'rsvp_ceremony' => $data->rsvpCeremony ?? $data->status,
+            'rsvp_reception' => $data->rsvpReception ?? $data->status,
+            'rsvp_afterparty' => $data->rsvpAfterparty ?? $data->status,
             'confirmed_count' => $data->confirmedCount,
             'dietary_preference' => $data->dietaryPreference,
             'shuttle_bus' => $data->shuttleBus ?? 'no',

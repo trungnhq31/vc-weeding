@@ -33,6 +33,9 @@ class Guest extends Model
         'checked_in_at',
         'table_name',
         'rsvp_status',
+        'rsvp_ceremony',
+        'rsvp_reception',
+        'rsvp_afterparty',
         'notes',
     ];
 
@@ -49,6 +52,9 @@ class Guest extends Model
             'is_checked_in' => 'boolean',
             'checked_in_at' => 'datetime',
             'rsvp_status' => RsvpStatus::class,
+            'rsvp_ceremony' => RsvpStatus::class,
+            'rsvp_reception' => RsvpStatus::class,
+            'rsvp_afterparty' => RsvpStatus::class,
         ];
     }
 

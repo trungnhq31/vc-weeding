@@ -32,6 +32,9 @@ class CreateGuestAction
             'table_id' => $data['table_id'] ?? null,
             'table_name' => $data['table_name'] ?? 'Chưa xếp',
             'rsvp_status' => $status,
+            'rsvp_ceremony' => $data['rsvp_ceremony'] ?? $status,
+            'rsvp_reception' => $data['rsvp_reception'] ?? $status,
+            'rsvp_afterparty' => $data['rsvp_afterparty'] ?? $status,
             'notes' => $data['notes'] ?? null,
         ]);
     }

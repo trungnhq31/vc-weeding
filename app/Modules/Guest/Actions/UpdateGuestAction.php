@@ -17,6 +17,19 @@ class UpdateGuestAction
             $rsvpStatus = 'attending';
         }
 
+        $rsvpCeremony = $data['rsvp_ceremony'] ?? null;
+        if ($rsvpCeremony && in_array($rsvpCeremony, ['confirmed', 'yes'], true)) {
+            $rsvpCeremony = 'attending';
+        }
+        $rsvpReception = $data['rsvp_reception'] ?? null;
+        if ($rsvpReception && in_array($rsvpReception, ['confirmed', 'yes'], true)) {
+            $rsvpReception = 'attending';
+        }
+        $rsvpAfterparty = $data['rsvp_afterparty'] ?? null;
+        if ($rsvpAfterparty && in_array($rsvpAfterparty, ['confirmed', 'yes'], true)) {
+            $rsvpAfterparty = 'attending';
+        }
+
         $guest->update(array_filter([
             'name' => $data['name'] ?? null,
             'group' => $data['group'] ?? null,
@@ -28,6 +41,9 @@ class UpdateGuestAction
             'table_id' => $data['table_id'] ?? null,
             'table_name' => $data['table_name'] ?? null,
             'rsvp_status' => $rsvpStatus,
+            'rsvp_ceremony' => $rsvpCeremony,
+            'rsvp_reception' => $rsvpReception,
+            'rsvp_afterparty' => $rsvpAfterparty,
             'notes' => $data['notes'] ?? null,
         ], fn ($val) => $val !== null));
 

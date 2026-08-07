@@ -41,6 +41,17 @@ class GroundedDataQueryService
 
         // 1. Budget Overview
         $budgetOverview = $this->cashFlowCalculator->calculateOverview($workspaceId);
+        $budgetOverview['items'] = \App\Modules\Budget\Models\BudgetItem::where('workspace_id', $workspaceId)
+            ->get()
+            ->map(fn ($item) => [
+                'item_name' => $item->item_name,
+                'category_name' => $item->category_name,
+                'estimated_amount' => (float) $item->estimated_amount,
+                'actual_amount' => (float) $item->actual_amount,
+                'deposit_paid' => (float) $item->deposit_paid,
+                'payment_status' => $item->payment_status,
+            ])
+            ->toArray();
 
         // 2. Tasks Overview
         $allTasks = Task::forWorkspace($workspaceId)->get();
@@ -67,11 +78,37 @@ class GroundedDataQueryService
 
         // 3. Vendors Overview
         $vendorSummary = $this->vendorCrmService->getSummary($workspaceId);
+        $vendorSummary['items'] = \App\Modules\Vendor\Models\Vendor::forWorkspace($workspaceId)
+            ->get()
+            ->map(fn ($v) => [
+                'name' => $v->name,
+                'category' => $v->category,
+                'contract_amount' => (float) $v->contract_amount,
+                'paid_amount' => (float) $v->paid_amount,
+                'payment_status' => $v->payment_status,
+            ])
+            ->toArray();
 
         // 4. Guests & Seating Overview
         $allGuests = Guest::forWorkspace($workspaceId)->get();
         $totalGuests = $allGuests->count();
         $attendingGuests = $allGuests->filter(fn (Guest $g) => in_array($g->rsvp_status?->value ?? $g->rsvp_status, ['attending', 'confirmed', 'yes']))->count();
+        
+        $attendingCeremony = $allGuests->filter(function (Guest $g) {
+            $val = $g->rsvp_ceremony?->value ?? $g->rsvp_ceremony;
+            return in_array($val, ['attending', 'confirmed', 'yes'], true);
+        })->count();
+
+        $attendingReception = $allGuests->filter(function (Guest $g) {
+            $val = $g->rsvp_reception?->value ?? $g->rsvp_reception;
+            return in_array($val, ['attending', 'confirmed', 'yes'], true);
+        })->count();
+
+        $attendingAfterparty = $allGuests->filter(function (Guest $g) {
+            $val = $g->rsvp_afterparty?->value ?? $g->rsvp_afterparty;
+            return in_array($val, ['attending', 'confirmed', 'yes'], true);
+        })->count();
+
         $unseatedGuests = $allGuests->whereNull('table_id')->count();
 
         $allTables = Table::forWorkspace($workspaceId)->get();
@@ -80,6 +117,9 @@ class GroundedDataQueryService
         $guestsOverview = [
             'total_guests' => $totalGuests,
             'attending_guests' => $attendingGuests,
+            'attending_ceremony' => $attendingCeremony,
+            'attending_reception' => $attendingReception,
+            'attending_afterparty' => $attendingAfterparty,
             'unseated_guests' => $unseatedGuests,
             'total_tables' => $allTables->count(),
             'over_capacity_tables_count' => $overCapacityTablesCount,
@@ -123,11 +163,23 @@ class GroundedDataQueryService
         }
 
         if ($budgetOverview['is_overrun_alert']) {
+            $unpaidHighItems = \App\Modules\Budget\Models\BudgetItem::where('workspace_id', $workspaceId)
+                ->where('payment_status', '!=', 'fully_paid')
+                ->orderBy('actual_amount', 'desc')
+                ->take(2)
+                ->get();
+            
+            $itemTips = '';
+            if ($unpaidHighItems->count() > 0) {
+                $names = $unpaidHighItems->map(fn($it) => "'{$it->item_name}' (" . number_format((float)$it->actual_amount) . " VNĐ)")->implode(' và ');
+                $itemTips = " Cân nhắc thương lượng lại hoặc cắt giảm chi tiết ở các hạng mục chưa thanh toán xong: {$names}.";
+            }
+
             $remediationSuggestions[] = [
                 'task_id' => null,
                 'task_title' => 'Cảnh báo vỡ ngân sách',
                 'severity' => 'warning',
-                'advice' => 'Ngân sách thực tế đang vượt '.number_format($budgetOverview['overrun_amount']).' VNĐ so với trần ngân sách. Đề xuất: Cắt giảm chi phí hoa tươi phụ phụ hoặc chọn gói thiệp cưới digital.',
+                'advice' => 'Ngân sách thực tế đang vượt '.number_format($budgetOverview['overrun_amount']).' VNĐ so với trần ngân sách.' . $itemTips,
                 'action_label' => 'Tối ưu ngân sách',
             ];
         }
